@@ -170,12 +170,28 @@ class FlowVisor:
 
     @staticmethod
     def visualize_module(module: object):
+        FlowVisor.visualize_module_helper(module, [])
+    
+    @staticmethod
+    def visualize_module_helper(module: object, added_modules):
         """
         Visualizes all the functions in a module.
         """
+        print("This function is still buggy and will not work as expected. Workin on it!")
         for name, obj in getmembers(module, isfunction):
             setattr(module, name, vis(obj))
 
-         # add for all submodules
-        for name, sub_module in getmembers(module, ismodule):
-            FlowVisor.visualize_module(sub_module)
+        # TODO
+        # # add for all submodules
+        #for name, sub_module in getmembers(module, ismodule):
+        #    if sub_module.__name__ in added_modules:
+        #        with open(f"log.txt", "a") as f:
+        #            f.write(f"NOT Visualizing module: {sub_module.__name__}\n")
+#
+        #        continue
+        #    added_modules.append(sub_module.__name__)
+        #    print(f"Visualizing module: {sub_module.__name__}")
+        #    # write to a file
+        #    with open(f"log.txt", "a") as f:
+        #        f.write(f"Visualizing module: {sub_module.__name__}\n")
+        #    FlowVisor.visualize_module_helper(sub_module, added_modules)
