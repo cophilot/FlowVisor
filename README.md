@@ -3,7 +3,7 @@
   <!-- <img src="" alt="FlowVisorLogo" width="30%"/> -->
   <h1>FlowVisor</h1>
   <p>
-    Visualize the flow of your python code
+    Visualize the flow of your python code.
   </p>
 </div>
 

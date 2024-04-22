@@ -1,5 +1,6 @@
-from flowvisor import FlowVisor
+from flowvisor import FlowVisor, vis
 
+@vis # Decorator to include the function in the graph
 def deposit(amount):
     if exit:
         return
@@ -33,6 +34,7 @@ def main():
     print("Thank you for banking with us!")
 
 if __name__ == "__main__":
-    FlowVisor.visualize_all()
+    FlowVisor.visualize_all() # Puts "vis" on all functions
     main()
-    FlowVisor.generate_graph()
+    FlowVisor.CONFIG.output_file = "example_graph" # You can add some configureation with the CONFIG object
+    FlowVisor.generate_graph() # Gnereates the graph

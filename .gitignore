@@ -1,3 +1,7 @@
 __*cache__
 ideas.md
 function_flow.png
+dist
+build
+*.egg-info
+example_graph.png
