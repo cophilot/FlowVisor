@@ -81,9 +81,9 @@ class FunctionNode:
         if font_color == "":
             font_color = utils.font_color_to_hex_color(self.time, highest_time)
 
-        self.diagram_node = Custom(title, circle_file, 
-                                   width=str(size), 
-                                   height=str(size), 
+        self.diagram_node = Custom(title, circle_file,
+                                   width=str(size),
+                                   height=str(size),
                                    fontcolor=font_color)
 
     def get_node_title(self, config: FlowVisorConfig):
@@ -182,7 +182,7 @@ class FunctionNode:
     def clear_node_image_cache():
         """
         Clears the node image cache.
-        """    
+        """
         for file in os.listdir(FunctionNode.NODE_IMAGE_CACHE):
             os.remove(f"{FunctionNode.NODE_IMAGE_CACHE}/{file}")
         os.rmdir(FunctionNode.NODE_IMAGE_CACHE)

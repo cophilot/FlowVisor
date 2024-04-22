@@ -117,7 +117,7 @@ class FlowVisor:
         finally:
             FunctionNode.clear_node_image_cache()
 
-    @staticmethod           
+    @staticmethod
     def draw_function_node(func_node: FunctionNode, highest_time):
         """
         Draws the function node.
@@ -155,7 +155,7 @@ class FlowVisor:
     @staticmethod
     def visualize_all():
         """
-        Visualizes all the functions in the code.
+        Visualizes all the functions in this project.
         """
         FlowVisor.visualize_module_by_name("__main__")
 
