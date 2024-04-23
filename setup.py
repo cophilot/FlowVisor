@@ -18,7 +18,7 @@ setup(
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
     install_requires=[
-        'Pillow~=9.3.0',
+        'Pillow~=10.3.0',
         'diagrams~=0.23.4',
         'pickle-mixin~=1.0.2'
     ],
