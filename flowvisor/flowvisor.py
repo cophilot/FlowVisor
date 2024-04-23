@@ -90,7 +90,7 @@ class FlowVisor:
         return [node for node in FlowVisor.NODES if node.called > 0]
 
     @staticmethod
-    def show_graph():
+    def graph():
         """
         Generates the graph.
         """
@@ -163,7 +163,7 @@ class FlowVisor:
         for node in FlowVisor.NODES:
             node.resolve_children_ids(FlowVisor.NODES)
 
-        FlowVisor.show_graph()
+        FlowVisor.graph()
 
     @staticmethod
     def draw_function_node(func_node: FunctionNode, highest_time):

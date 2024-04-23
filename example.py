@@ -40,5 +40,5 @@ def main():
 if __name__ == "__main__":
     main()
     FlowVisor.CONFIG.output_file = "example_graph" # You can add some configureation with the CONFIG object
-    FlowVisor.generate_graph() # Generate the graph
-    FlowVisor.save_flow("example_flow", "json") # Save the flow as json
+    FlowVisor.graph() # Generate the graph
+    FlowVisor.export("example_flow", "json") # Save the flow as json
