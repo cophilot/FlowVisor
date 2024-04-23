@@ -90,7 +90,7 @@ class FlowVisor:
         return [node for node in FlowVisor.NODES if node.called > 0]
 
     @staticmethod
-    def generate_graph():
+    def show_graph():
         """
         Generates the graph.
         """
@@ -101,11 +101,11 @@ class FlowVisor:
                 highest_time = node.time
 
         try:
-            FunctionNode.make_node_image_cache()
             with Diagram(FlowVisor.CONFIG.graph_title,
                          show=FlowVisor.CONFIG.show_graph,
                          filename=FlowVisor.CONFIG.output_file,
                          direction="LR"):
+                FunctionNode.make_node_image_cache()
                 # Add logo
                 if FlowVisor.CONFIG.logo != "":
                     Custom("", FlowVisor.CONFIG.logo,
@@ -126,7 +126,7 @@ class FlowVisor:
         return [node.to_dict() for node in FlowVisor.NODES]
 
     @staticmethod
-    def save_flow(file: str, type = "pickle"):
+    def export(file: str, type = "pickle"):
         """
         Saves the flow to a file.
         """
@@ -143,7 +143,7 @@ class FlowVisor:
                 pickle.dump(nodes_dict, f)
 
     @staticmethod
-    def generate_graph_from_file(file: str):
+    def generate_graph(file: str = ""):
         """
         Generates the graph from a file.
         """
@@ -156,14 +156,14 @@ class FlowVisor:
         else:
             with open(file, "rb") as f:
                 raw_nodes = pickle.load(f)
-        
+
         for n in raw_nodes:
             node = FunctionNode.from_dict(n)
             FlowVisor.NODES.append(node)
         for node in FlowVisor.NODES:
             node.resolve_children_ids(FlowVisor.NODES)
-        
-        FlowVisor.generate_graph()
+
+        FlowVisor.show_graph()
 
     @staticmethod
     def draw_function_node(func_node: FunctionNode, highest_time):
@@ -219,7 +219,7 @@ class FlowVisor:
     @staticmethod
     def visualize_module(module: object):
         FlowVisor.visualize_module_helper(module, [])
-    
+
     @staticmethod
     def visualize_module_helper(module: object, added_modules):
         """
