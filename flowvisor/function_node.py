@@ -20,12 +20,14 @@ class FunctionNode:
     NODE_IMAGE_SCALE = 300
 
     def __init__(self, func):
-        self.id: str = utils.function_to_id(func)
-        self.uuid = uuid.uuid4()
-        self.name: str = func.__name__
-        self.file_path: str = func.__code__.co_filename
-        self.file_name: str = os.path.basename(self.file_path)
+        if func is not None:
+            self.id: str = utils.function_to_id(func)
+            self.uuid = str(uuid.uuid4())
+            self.name: str = func.__name__
+            self.file_path: str = func.__code__.co_filename
+            self.file_name: str = os.path.basename(self.file_path)
         self.children: List[FunctionNode] = []
+        self.children_ids: List[str] = []
         self.time: float = 0
         self.diagram_node = None
         self.called: int = 0
@@ -171,6 +173,46 @@ class FunctionNode:
     def __str__(self):
         return self.file_function_name()
 
+    def to_dict(self, short = False):
+        """
+        Gets the node as a dictionary.
+        
+        Args:
+            short: If the dictionary should be short.
+        """
+
+        if short:
+            return {
+                "id": self.id,
+                "uuid": self.uuid,
+                "name": self.name,
+                "file_path": self.file_path,
+                "file_name": self.file_name,
+            }
+        return {
+            "id": self.id,
+            "uuid": self.uuid,
+            "name": self.name,
+            "file_path": self.file_path,
+            "file_name": self.file_name,
+            "children": [child.to_dict(True) for child in self.children],
+            "time": self.time,
+            "called": self.called
+        }
+
+    def resolve_children_ids(self, all_nodes):
+        """
+        Resolves the children ids.
+        
+        Args:
+            all_nodes: All nodes in the graph.
+        """
+        self.children = []
+        for child_id in self.children_ids:
+            for node in all_nodes:
+                if node.uuid == child_id:
+                    self.add_child(node)
+
     @staticmethod
     def make_node_image_cache():
         """
@@ -186,3 +228,22 @@ class FunctionNode:
         for file in os.listdir(FunctionNode.NODE_IMAGE_CACHE):
             os.remove(f"{FunctionNode.NODE_IMAGE_CACHE}/{file}")
         os.rmdir(FunctionNode.NODE_IMAGE_CACHE)
+        
+    @staticmethod
+    def from_dict(dict):
+        """
+        Creates a FunctionNode from a dictionary.
+        
+        Args:
+            dict: The dictionary to create the FunctionNode from.
+        """
+        node = FunctionNode(None)
+        node.id = dict["id"]
+        node.uuid = dict["uuid"]
+        node.name = dict["name"]
+        node.file_path = dict["file_path"]
+        node.file_name = dict["file_name"]
+        node.children_ids = [child["uuid"] for child in dict["children"]]
+        node.time = dict["time"]
+        node.called = dict["called"]
+        return node

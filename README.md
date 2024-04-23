@@ -9,9 +9,9 @@
 
 <!-- Badges -->
 <div align="center">
-   <a href="https://github.com/cophilot/FlowVisor/releases">
+   <!-- <a href="https://github.com/cophilot/FlowVisor/releases">
        <img src="https://img.shields.io/github/v/release/cophilot/FlowVisor?display_name=tag" alt="current realease" />
-   </a>
+   </a> -->
    <a href="https://github.com/cophilot/FlowVisor/blob/master/LICENSE">
        <img src="https://img.shields.io/github/license/cophilot/FlowVisor" alt="license" />
    </a>
@@ -25,12 +25,68 @@
 
 ---
 
--   [Bugs](#bugs)
--   [Release Notes](#release-notes)
+## ![FlowVisor-Example](https://raw.githubusercontent.com/cophilot/FlowVisor/main/assets/example.png)
 
 ---
 
-## Bugs
+-   [Installation](#installation)
+-   [Usage](#usage)
+-   [Development](#development)
+-   [Example](#example)
+
+---
+
+## Installation
+
+```bash
+pip install FlowVisor
+```
+
+---
+
+## Usage
+
+```python
+from FlowVisor import FlowVisor, vis
+
+@vis # This will visualize the function in the flow
+def my_function():
+    print("Hello World")
+
+@vis
+def my_other_function():
+    my_function()
+
+my_other_function()
+FlowVisor.CONFIG.output_file = "example_graph" # You can add some configureation with the CONFIG object
+FlowVisor.generate_graph() # Generate the graph
+FlowVisor.save_flow("example_flow", "json") # Save the flow as json
+
+```
+
+---
+
+## Development
+
+```bash
+git clone https://github.com/cophilot/FlowVisor
+cd FlowVisor
+pip install -r requirements.txt
+```
+
+---
+
+## Example
+
+Run the example:
+
+```python
+python example.py
+```
+
+---
+
+<!-- ## Bugs
 
 -   _no known bugs_
 
@@ -41,7 +97,6 @@
 ### [v0.0.1](https://github.com/cophilot/FlowVisor/tree/0.0.1)
 
 -   _Initial release_
-
----
+ -->
 
 by [Philipp B.](https://github.com/cophilot)
