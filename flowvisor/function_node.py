@@ -68,7 +68,7 @@ class FunctionNode:
         """
         Generates the diagram node.
         """
-        circle_file = self.export_node_image(highest_time)
+        node_image = self.export_node_image(highest_time)
 
         size = self.time / highest_time
         if size < 0.1:
@@ -83,7 +83,7 @@ class FunctionNode:
         if font_color == "":
             font_color = utils.font_color_to_hex_color(self.time, highest_time)
 
-        self.diagram_node = Custom(title, circle_file,
+        self.diagram_node = Custom(title, node_image,
                                    width=str(size),
                                    height=str(size),
                                    fontcolor=font_color)

@@ -1,4 +1,5 @@
 """
+Configuration class for FlowVisor
 """
 class FlowVisorConfig:
     """
@@ -15,7 +16,10 @@ class FlowVisorConfig:
         self.node_show_call_count: bool = True
         self.node_show_avg_time: bool = True
         self.static_font_color: str = ""
-        
+        self.reduce_overhead: bool = True
+        self.add_timestamp: bool = False
+        self.advanced_overhead_reduction = None
+
     def get_node_scale(self):
         """
         Get the node scale as a string

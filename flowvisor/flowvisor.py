@@ -1,15 +1,18 @@
 """
 The FlowVisor is a package that visualizes the flow of functions in a codebase.
 """
-import time
+import datetime
 import json
+import timeit
 from typing import List
 from inspect import getmembers, isfunction, ismodule
 import pickle
 from diagrams import Diagram
 from diagrams.custom import Custom
+from flowvisor import utils
 from flowvisor.flowvisor_config import FlowVisorConfig
 from flowvisor.function_node import FunctionNode
+from flowvisor.time_tracker import TimeTracker
 from flowvisor.utils import function_to_id
 
 def vis(func):
@@ -17,11 +20,25 @@ def vis(func):
     Decorator that visualizes the function.
     """
     def wrapper(*args, **kwargs):
+        TimeTracker.stop()
+        if FlowVisor.CONFIG.reduce_overhead:
+            TimeTracker.apply(advanced=FlowVisor.get_advanced_overhead_reduction())
+            timer_id = TimeTracker.register_new_timer()
+
         FlowVisor.function_called(func)
-        start = time.time()
+
+        start = TimeTracker.start()
         result = func(*args, **kwargs)
-        end = time.time()
-        FlowVisor.function_returned(func, duration=end - start)
+        end = TimeTracker.stop()
+
+        duration = end - start
+        if FlowVisor.CONFIG.reduce_overhead:
+            TimeTracker.apply(advanced=FlowVisor.get_advanced_overhead_reduction())
+            duration = TimeTracker.get_time_and_remove_timer(timer_id)
+
+        FlowVisor.function_returned(func, duration)
+        
+        TimeTracker.start()
         return result
     return wrapper
 
@@ -106,7 +123,9 @@ class FlowVisor:
                          filename=FlowVisor.CONFIG.output_file,
                          direction="LR"):
                 FunctionNode.make_node_image_cache()
-                # Add logo
+                if FlowVisor.CONFIG.add_timestamp:
+                    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    Custom(str(timestamp), "", width="0.001", height="0.001")
                 if FlowVisor.CONFIG.logo != "":
                     Custom("", FlowVisor.CONFIG.logo,
                            width=FlowVisor.CONFIG.get_node_scale(),
@@ -126,17 +145,17 @@ class FlowVisor:
         return [node.to_dict() for node in FlowVisor.NODES]
 
     @staticmethod
-    def export(file: str, type = "pickle"):
+    def export(file: str, export_type = "pickle"):
         """
         Saves the flow to a file.
         """
         nodes_dict = FlowVisor.get_nodes_as_dict()
-        if type == "json":
+        if export_type == "json":
             if not file.endswith(".json"):
                 file += ".json"
             with open(file, "w", encoding="utf-8") as f:
                 json.dump(nodes_dict, f, indent=4)
-        if type == "pickle":
+        if export_type == "pickle":
             if not file.endswith(".pickle"):
                 file += ".pickle"
             with open(file, "wb") as f:
@@ -199,6 +218,38 @@ class FlowVisor:
         Sets the exclude functions.
         """
         FlowVisor.EXCLUDE_FUNCTIONS = exclude_functions
+
+    @staticmethod
+    def is_stack_empty():
+        """
+        Checks if the stack is empty.
+        """
+        return len(FlowVisor.STACK) == 0
+
+    @staticmethod
+    def enable_advanced_overhead_reduction():
+        """
+        Enables advanced overhead reduction.
+        """
+        n = 50000
+        t = timeit.timeit(setup="import time", stmt="time.time()", number=n)
+        mean = t / n
+        print(f"Mean time for time.time() is: {utils.get_time_as_string(mean)}")
+        FlowVisor.CONFIG.advanced_overhead_reduction = mean
+
+    @staticmethod
+    def disable_advanced_overhead_reduction():
+        """
+        Disables advanced overhead reduction.
+        """
+        FlowVisor.CONFIG.advanced_overhead_reduction = None
+
+    @staticmethod
+    def get_advanced_overhead_reduction():
+        """
+        Gets the advanced overhead reduction.
+        """
+        return FlowVisor.CONFIG.advanced_overhead_reduction
 
     @staticmethod
     def visualize_all():
