@@ -5,9 +5,9 @@ import datetime
 import json
 import timeit
 from typing import List
-from inspect import getmembers, isfunction, ismodule
+#from inspect import getmembers, isfunction, ismodule
 import pickle
-from diagrams import Diagram
+from diagrams import Diagram, Cluster
 from diagrams.custom import Custom
 from flowvisor import utils
 from flowvisor.flowvisor_config import FlowVisorConfig
@@ -111,7 +111,7 @@ class FlowVisor:
         """
         Generates the graph.
         """
-        highest_time = 0
+        highest_time = -1
         called_nodes = FlowVisor.get_called_nodes_only()
         for node in called_nodes:
             if node.time > highest_time:
@@ -122,20 +122,67 @@ class FlowVisor:
                          show=FlowVisor.CONFIG.show_graph,
                          filename=FlowVisor.CONFIG.output_file,
                          direction="LR"):
+
                 FunctionNode.make_node_image_cache()
+
                 if FlowVisor.CONFIG.add_timestamp:
                     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     Custom(str(timestamp), "", width="0.001", height="0.001")
+
                 if FlowVisor.CONFIG.logo != "":
                     Custom("", FlowVisor.CONFIG.logo,
                            width=FlowVisor.CONFIG.get_node_scale(),
                            height=FlowVisor.CONFIG.get_node_scale())
 
                 # Draw nodes
-                for r in called_nodes:
-                    FlowVisor.draw_function_node(r, highest_time)
+                if FlowVisor.CONFIG.group_nodes:
+                    FlowVisor.draw_nodes_with_cluster(called_nodes, highest_time)
+                else:
+                    for n in called_nodes:
+                        FlowVisor.draw_function_node(n, highest_time)
+
         finally:
+            # Make sure to clear the cache always
             FunctionNode.clear_node_image_cache()
+
+    @staticmethod
+    def draw_nodes_with_cluster(nodes: List[FunctionNode], highest_time: float):
+        """
+        Draws the nodes with cluster.
+        """
+        sorted_nodes = FlowVisor.get_node_sorted_by_filename(nodes)
+        total_times = [sum([n.time for n in row]) for row in sorted_nodes]
+        highest_time_file_time = max(total_times)
+        for index, row in enumerate(sorted_nodes):
+            cluster_title = f"{row[0].file_name} ({utils.get_time_as_string(total_times[index])})"
+            bg_color = utils.value_to_hex_color(total_times[index], highest_time_file_time,
+                                                light_color=[0xFF, 0xFF, 0xFF],
+                                                dark_color=[0xAA, 0xAA, 0xAA])
+            font_color = utils.value_to_hex_color(total_times[index], highest_time_file_time,
+                                                light_color=[0x00, 0x00, 0x00],
+                                                dark_color=[0xFF, 0xFF, 0xFF])
+            with Cluster(cluster_title, graph_attr={"bgcolor": bg_color, "fontcolor": font_color}):
+                for n in row:
+                    FlowVisor.draw_function_node(n, highest_time)
+
+    @staticmethod
+    def get_node_sorted_by_filename(nodes: List[FunctionNode]):
+        """
+        Returns the nodes sorted by filename.
+        """
+        file_names = []
+        for node in nodes:
+            if node.file_path not in file_names:
+                file_names.append(node.file_path)
+
+        result = []
+        for file_name in file_names:
+            row = []
+            for node in nodes:
+                if node.file_path == file_name:
+                    row.append(node)
+            result.append(row)
+        return result
 
     @staticmethod
     def get_nodes_as_dict():
@@ -252,6 +299,21 @@ class FlowVisor:
         return FlowVisor.CONFIG.advanced_overhead_reduction
 
     @staticmethod
+    def enable_dev_mode():
+        """
+        Enables the dev mode.
+        """
+        FlowVisor.CONFIG.dev_mode = True
+
+    @staticmethod
+    def set_config(config: FlowVisorConfig):
+        """
+        Sets the configuration.
+        """
+        FlowVisor.CONFIG = config
+
+    '''
+    @staticmethod
     def visualize_all():
         """
         Visualizes all the functions in this project.
@@ -294,3 +356,4 @@ class FlowVisor:
         #    with open(f"log.txt", "a") as f:
         #        f.write(f"Visualizing module: {sub_module.__name__}\n")
         #    FlowVisor.visualize_module_helper(sub_module, added_modules)
+    '''

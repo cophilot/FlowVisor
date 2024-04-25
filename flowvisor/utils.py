@@ -32,50 +32,24 @@ def get_time_as_string(t: float):
 
     return "<1ns"
 
-def value_to_hex_color(value, max_value):
+def value_to_hex_color(value, max_value, light_color = [0xA9, 0xF3, 0xF9], dark_color = [0x00, 0x1F, 0x3F]):
+    """
+    Return a hexadecimal color code based on the value and max_value
+    """
     # Ensure value is within range [0, max_value]
     value = max(0, min(value, max_value))
-    
-    # Interpolate between light blue (#a9f3f9) and dark blue (#00008B)
-    light_blue = [0xA9, 0xF3, 0xF9]  # RGB values for light blue
-    dark_blue = [0x00, 0x1F, 0x3F]    # RGB values for dark blue
-    
-    # Calculate interpolation factors
-    ratio = value / max_value
-    inv_ratio = 1 - ratio
-    
-    # Interpolate RGB values
-    interpolated_color = [
-        int(light_blue[i] * inv_ratio + dark_blue[i] * ratio)
-        for i in range(3)
-    ]
-    
-    # Convert interpolated RGB values to hexadecimal color code
-    hex_color = '#{:02X}{:02X}{:02X}'.format(*interpolated_color)
-    
-    return hex_color
 
-def font_color_to_hex_color(value, max_value):
-    # Ensure value is within range [0, max_value]
-    value = max(0, min(value, max_value))
-    
-    # Interpolate between light orange (#ffc082) and dark orange (#6b3500)
-    light_orange = [0xFF, 0xFF, 0xFF]  # RGB values for light orange
-    dark_orange = [0x6B, 0x35, 0x00]    # RGB values for dark orange
-    light_orange = [0xFF, 0xC0, 0x82]  # RGB values for light orange
-    dark_orange = [0x00, 0x00, 0x00]    # RGB values for dark orange
-    
     # Calculate interpolation factors
     ratio = value / max_value
     inv_ratio = 1 - ratio
-    
+
     # Interpolate RGB values
     interpolated_color = [
-        int(dark_orange[i] * inv_ratio + light_orange[i] * ratio)
+        int(light_color[i] * inv_ratio + dark_color[i] * ratio)
         for i in range(3)
     ]
-    
+
     # Convert interpolated RGB values to hexadecimal color code
     hex_color = '#{:02X}{:02X}{:02X}'.format(*interpolated_color)
-    
+
     return hex_color

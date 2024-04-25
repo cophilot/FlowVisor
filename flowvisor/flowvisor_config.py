@@ -19,6 +19,8 @@ class FlowVisorConfig:
         self.reduce_overhead: bool = True
         self.add_timestamp: bool = False
         self.advanced_overhead_reduction = None
+        self.group_nodes: bool = False
+        self.dev_mode: bool = False
 
     def get_node_scale(self):
         """

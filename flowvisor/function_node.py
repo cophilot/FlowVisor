@@ -81,7 +81,9 @@ class FunctionNode:
 
         font_color = config.static_font_color
         if font_color == "":
-            font_color = utils.font_color_to_hex_color(self.time, highest_time)
+            font_color = utils.value_to_hex_color(self.time, highest_time,
+                                                  dark_color=[0xFF, 0xC0, 0x82],
+                                                  light_color=[0x00, 0x00, 0x00])
 
         self.diagram_node = Custom(title, node_image,
                                    width=str(size),

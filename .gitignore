@@ -4,5 +4,5 @@ function_flow.png
 dist
 build/
 *.egg-info
-example_graph.png
+example_flow*
 *.pickle
