@@ -8,11 +8,12 @@ def add_decorator(dir_path="."):
     for root, dirs, files in os.walk(dir_path):
         if ignore_dir(os.path.basename(root)):
             continue
-                
+
         for file in files:
             if not file.endswith(".py"):
                 continue
             handle_file(root, file)
+    print("Done")
 
 def handle_file(root, file):
     # read contents of the file
@@ -79,7 +80,7 @@ def is_function(line):
     return line.strip().startswith("def ") and line.strip().endswith(":")
 
 def main():
-
+    print("This script will add the vis decorator to all python files in the provided directory.")
     # check if the path is provided as an argument
     args = sys.argv
     for index, arg in enumerate(args):

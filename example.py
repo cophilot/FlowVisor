@@ -37,7 +37,6 @@ def main():
 if __name__ == "__main__":
     FlowVisor.enable_advanced_overhead_reduction() # Reduce the overhead to a minimum
     main()
-    FlowVisor.CONFIG.group_nodes = True
     FlowVisor.CONFIG.output_file = "example_flow" # You can add some configureation with the CONFIG object
     FlowVisor.graph() # Generate the graph
     FlowVisor.export("example_flow", "json") # Save the flow as json

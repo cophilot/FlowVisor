@@ -215,12 +215,30 @@ class FunctionNode:
                 if node.uuid == child_id:
                     self.add_child(node)
 
+    def get_time_without_children(self):
+        """
+        Gets the time without the children.
+        """
+        time = self.time
+        for child in self.children:
+            time -= child.time
+        return time
+
     @staticmethod
     def make_node_image_cache():
         """
         Makes the node image cache.
+        
+        Returns:
+            The file name of the blank image.
         """
         os.makedirs(FunctionNode.NODE_IMAGE_CACHE, exist_ok=True)
+        dim = FunctionNode.NODE_IMAGE_SCALE
+        image = Image.new('RGB', (dim, dim), 'white')
+
+        file_name = f"{FunctionNode.NODE_IMAGE_CACHE}/_blank.png"
+        image.save(file_name)
+        return file_name
 
     @staticmethod
     def clear_node_image_cache():

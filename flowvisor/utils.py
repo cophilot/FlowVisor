@@ -1,3 +1,9 @@
+"""
+Utility functions for the flowvisor package
+"""
+
+import os
+
 def function_to_id(func):
     """
     Generate a unique id for a function
@@ -53,3 +59,20 @@ def value_to_hex_color(value, max_value, light_color = [0xA9, 0xF3, 0xF9], dark_
     hex_color = '#{:02X}{:02X}{:02X}'.format(*interpolated_color)
 
     return hex_color
+
+def get_sys_info():
+    """
+    Get system information
+    """
+    device_name = os.popen("hostname").read().strip()
+    cpu_name = os.popen("lscpu | grep 'Model name'").read().strip().split(":")[1].strip()
+    cpu_cores = os.popen("lscpu | grep 'CPU(s)'").read().strip().split(":")[1].strip().split('\n')[0].strip()
+    cpu_freq = os.popen("lscpu | grep 'CPU max MHz'").read().strip().split(":")[1].strip() + " MHz"
+    ram = os.popen("free -h | grep Mem").read().strip().split()[1]
+    return {
+        "Device": device_name,
+        "CPU": cpu_name,
+        "Cores": cpu_cores,
+        "Frequency": cpu_freq,
+        "RAM": ram
+    }

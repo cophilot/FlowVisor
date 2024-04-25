@@ -15,7 +15,7 @@ class TimeTracker:
         Returns:
             The end time.
         """
-
+        # no code here!
         end = time.time()
         TimeTracker.END_TIME = end
         return end
@@ -39,7 +39,7 @@ class TimeTracker:
         TimeTracker.END_TIME = None
 
     @staticmethod
-    def start():
+    def start(reduce_overhead: bool):
         """
         Starts the time tracker.
         
@@ -47,11 +47,12 @@ class TimeTracker:
             The start time.
         """
 
-        if TimeTracker.START_TIME is not None:
+        if reduce_overhead and TimeTracker.START_TIME is not None:
             print("[FlowVisor.INTERNAL] Time tracker is already running.")
             return TimeTracker.START_TIME
 
         TimeTracker.START_TIME = time.time()
+        # no code here!
         return TimeTracker.START_TIME
 
     @staticmethod

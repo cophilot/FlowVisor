@@ -18,6 +18,7 @@ class FlowVisorConfig:
         self.static_font_color: str = ""
         self.reduce_overhead: bool = True
         self.add_timestamp: bool = False
+        self.add_system_info: bool = False
         self.advanced_overhead_reduction = None
         self.group_nodes: bool = False
         self.dev_mode: bool = False

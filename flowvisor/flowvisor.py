@@ -21,24 +21,26 @@ def vis(func):
     """
     def wrapper(*args, **kwargs):
         TimeTracker.stop()
-        if FlowVisor.CONFIG.reduce_overhead:
+
+        reduce_overhead = FlowVisor.CONFIG.reduce_overhead
+        if reduce_overhead:
             TimeTracker.apply(advanced=FlowVisor.get_advanced_overhead_reduction())
             timer_id = TimeTracker.register_new_timer()
 
         FlowVisor.function_called(func)
 
-        start = TimeTracker.start()
+        start = TimeTracker.start(reduce_overhead)
         result = func(*args, **kwargs)
         end = TimeTracker.stop()
 
         duration = end - start
-        if FlowVisor.CONFIG.reduce_overhead:
+        if reduce_overhead:
             TimeTracker.apply(advanced=FlowVisor.get_advanced_overhead_reduction())
             duration = TimeTracker.get_time_and_remove_timer(timer_id)
 
         FlowVisor.function_returned(func, duration)
-        
-        TimeTracker.start()
+
+        TimeTracker.start(reduce_overhead)
         return result
     return wrapper
 
@@ -123,11 +125,9 @@ class FlowVisor:
                          filename=FlowVisor.CONFIG.output_file,
                          direction="LR"):
 
-                FunctionNode.make_node_image_cache()
+                blank_image = FunctionNode.make_node_image_cache()
 
-                if FlowVisor.CONFIG.add_timestamp:
-                    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    Custom(str(timestamp), "", width="0.001", height="0.001")
+                FlowVisor.draw_meta_data(blank_image)
 
                 if FlowVisor.CONFIG.logo != "":
                     Custom("", FlowVisor.CONFIG.logo,
@@ -146,12 +146,28 @@ class FlowVisor:
             FunctionNode.clear_node_image_cache()
 
     @staticmethod
+    def draw_meta_data(blank_image):
+        """
+        Draws some metadata on the graph.
+        """
+        with Cluster("Metadata", graph_attr={"bgcolor": "#FFFFFF"}):
+            if FlowVisor.CONFIG.add_system_info:
+                sys_info = utils.get_sys_info()
+                text = ""
+                for key, value in sys_info.items():
+                    text += f"{key}: {value}\n"
+                Custom(text, blank_image, width="6", height="1")
+            if FlowVisor.CONFIG.add_timestamp:
+                timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                Custom(str(timestamp), blank_image, width="3", height="0.2")
+
+    @staticmethod
     def draw_nodes_with_cluster(nodes: List[FunctionNode], highest_time: float):
         """
         Draws the nodes with cluster.
         """
         sorted_nodes = FlowVisor.get_node_sorted_by_filename(nodes)
-        total_times = [sum([n.time for n in row]) for row in sorted_nodes]
+        total_times = [sum([n.get_time_without_children() for n in row]) for row in sorted_nodes]
         highest_time_file_time = max(total_times)
         for index, row in enumerate(sorted_nodes):
             cluster_title = f"{row[0].file_name} ({utils.get_time_as_string(total_times[index])})"

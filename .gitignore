@@ -6,3 +6,4 @@ build/
 *.egg-info
 example_flow*
 *.pickle
+token

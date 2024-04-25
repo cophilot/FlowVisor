@@ -66,6 +66,34 @@ FlowVisor.save_flow("example_flow", "json") # Save the flow as json
 
 ---
 
+## CLI
+
+### add-vis
+
+Adds the vis decorator to all functions in all python files in a directory.
+
+```bash
+add-vis -p <path-to-dir>
+```
+
+### remove-vis
+
+Removes the vis decorator from all functions in all python files in a directory.
+
+```bash
+remove-vis -p <path-to-dir>
+```
+
+### vis-file
+
+Generate a graph from a exported flow file.
+
+```bash
+vis-file -f <path-to-flow-file>
+```
+
+---
+
 ## Development
 
 ```bash
@@ -81,6 +109,7 @@ pip install -r requirements.txt
 Run the example:
 
 ```python
+pip install -r requirements.txt
 python example.py
 ```
 
