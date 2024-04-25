@@ -45,7 +45,7 @@ setup(
     entry_points={
         'console_scripts': [
             'add-vis=flowvisor.cli.add_vis:main',
-            'remove-vis=flowvisor.cli.remove_vis:main'
+            'remove-vis=flowvisor.cli.remove_vis:main',
             'vis-file=flowvisor.cli.vis_file:main'
         ]
     }

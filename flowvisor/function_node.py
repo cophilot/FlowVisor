@@ -233,6 +233,9 @@ class FunctionNode:
             The file name of the blank image.
         """
         os.makedirs(FunctionNode.NODE_IMAGE_CACHE, exist_ok=True)
+
+        FunctionNode.NODE_IMAGE_CACHE = os.path.abspath(FunctionNode.NODE_IMAGE_CACHE)
+
         dim = FunctionNode.NODE_IMAGE_SCALE
         image = Image.new('RGB', (dim, dim), 'white')
 
