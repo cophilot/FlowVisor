@@ -81,6 +81,7 @@ def is_function(line):
 
 def main():
     print("This script will add the vis decorator to all python files in the provided directory.")
+    print("Visit https://github.com/cophilot/FlowVisor#cli for more information.")
     # check if the path is provided as an argument
     args = sys.argv
     for index, arg in enumerate(args):

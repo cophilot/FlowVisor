@@ -25,12 +25,17 @@
 
 ---
 
-## ![FlowVisor-Example](https://raw.githubusercontent.com/cophilot/FlowVisor/main/assets/example.png)
+![FlowVisor-Example](https://raw.githubusercontent.com/cophilot/FlowVisor/main/assets/example.png)
 
 ---
 
 -   [Installation](#installation)
 -   [Usage](#usage)
+-   [CLI](#cli)
+    -   [add-vis](#add-vis)
+    -   [remove-vis](#remove-vis)
+    -   [vis-file](#vis-file)
+-   [Overhead](#overhead)
 -   [Development](#development)
 -   [Example](#example)
 
@@ -59,8 +64,8 @@ def my_other_function():
 
 my_other_function()
 FlowVisor.CONFIG.output_file = "example_graph" # You can add some configureation with the CONFIG object
-FlowVisor.generate_graph() # Generate the graph
-FlowVisor.save_flow("example_flow", "json") # Save the flow as json
+FlowVisor.graph() # Generate the graph
+FlowVisor.export("example_flow", "json") # Save the flow as json
 
 ```
 
@@ -90,6 +95,18 @@ Generate a graph from a exported flow file.
 
 ```bash
 vis-file -f <path-to-flow-file>
+```
+
+---
+
+## Overhead
+
+The overhead of the FlowVisor is tried to be kept as low as possible. The overhead is mainly caused by the decorator. Therefore the time for running the logic of the Flowvisor is excluded from the profiling.
+
+You can even descrease the overhead by the `advanced_ovhead_reduction`:
+
+```python
+FlowVisor.enable_advanced_overhead_reduction()
 ```
 
 ---

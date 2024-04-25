@@ -7,6 +7,8 @@ def generate_graph(file_path):
     FlowVisor.generate_graph(file_path)
 
 def main():
+    print("This script will generate a flow graph from a file that was exported by FlowVisor.")
+    print("Visit https://github.com/cophilot/FlowVisor#cli for more information.")
     # check if the path is provided as an argument
     args = sys.argv
     for index, arg in enumerate(args):
