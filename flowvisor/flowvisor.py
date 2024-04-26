@@ -151,15 +151,18 @@ class FlowVisor:
         Draws some metadata on the graph.
         """
         with Cluster("Metadata", graph_attr={"bgcolor": "#FFFFFF"}):
-            if FlowVisor.CONFIG.add_system_info:
+            if FlowVisor.CONFIG.show_system_info:
                 sys_info = utils.get_sys_info()
                 text = ""
                 for key, value in sys_info.items():
                     text += f"{key}: {value}\n"
                 Custom(text, blank_image, width="6", height="1")
-            if FlowVisor.CONFIG.add_timestamp:
+            if FlowVisor.CONFIG.show_timestamp:
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 Custom(str(timestamp), blank_image, width="3", height="0.2")
+            if FlowVisor.CONFIG.show_flowvisor_settings:
+                s = FlowVisor.CONFIG.get_functional_settings_string()
+                Custom(str(s), blank_image, width="4", height="0.2")
 
     @staticmethod
     def draw_nodes_with_cluster(nodes: List[FunctionNode], highest_time: float):

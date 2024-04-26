@@ -96,17 +96,17 @@ class FunctionNode:
         """
         title = self.name + "\n"
 
-        if config.node_show_file:
+        if config.show_node_file:
             title += self.file_name + "\n"
 
         title += utils.get_time_as_string(self.time)
 
-        if config.node_show_call_count:
+        if config.show_node_call_count:
             title += f" ({self.called})"
 
         title += "\n"
 
-        if config.node_show_avg_time:
+        if config.show_node_avg_time:
             title += f"avg {utils.get_time_as_string(self.time / self.called)}"
 
         for _ in range(int(config.node_scale)):
