@@ -9,6 +9,7 @@ from diagrams.custom import Custom
 
 from flowvisor import utils
 from flowvisor.flowvisor_config import FlowVisorConfig
+from flowvisor.time_value import TimeValue
 
 
 class FunctionNode:
@@ -32,7 +33,7 @@ class FunctionNode:
         self.diagram_node = None
         self.called: int = 0
 
-    def export_node_image(self, highest_time):
+    def export_node_image(self, time_value: TimeValue):
         """
         Generates the node image background.
         """
@@ -40,9 +41,9 @@ class FunctionNode:
         image = Image.new('RGB', (dim, dim), 'white')
         draw = ImageDraw.Draw(image)
 
-        color = utils.value_to_hex_color(self.time, highest_time)
+        color = utils.value_to_hex_color(self.time, time_value.max_time)
 
-        if self.time >= highest_time * 0.9:
+        if self.time >= time_value.max_time * 0.9:
             # draw outline
             draw.rectangle((0, 0, dim, dim), fill="#ff0000")
             ## draw inner
@@ -56,32 +57,32 @@ class FunctionNode:
 
         return file_name
 
-    def get_as_diagram_node(self,highest_time: float, total_time: float, config: FlowVisorConfig):
+    def get_as_diagram_node(self, time_value: TimeValue, config: FlowVisorConfig):
         """
         Gets the node as a diagram node.
         """
         if self.diagram_node is None:
-            self.generate_diagram_node(highest_time, total_time, config)
+            self.generate_diagram_node(time_value, config)
         return self.diagram_node
 
-    def generate_diagram_node(self, highest_time: float, total_time: float, config: FlowVisorConfig):
+    def generate_diagram_node(self, time_value: TimeValue, config: FlowVisorConfig):
         """
         Generates the diagram node.
         """
-        node_image = self.export_node_image(highest_time)
+        node_image = self.export_node_image(time_value.max_time)
 
-        size = self.time / highest_time
+        size = self.time / time_value.max_time
         if size < 0.1:
             size = 0.1
 
         size = 1
         size = size * config.node_scale
 
-        title = self.get_node_title(total_time, config)
+        title = self.get_node_title(time_value , config)
 
         font_color = config.static_font_color
         if font_color == "":
-            font_color = utils.value_to_hex_color(self.time, highest_time,
+            font_color = utils.value_to_hex_color(self.time, time_value.max_time,
                                                   dark_color=[0xFF, 0xC0, 0x82],
                                                   light_color=[0x00, 0x00, 0x00])
 
@@ -90,7 +91,7 @@ class FunctionNode:
                                    height=str(size),
                                    fontcolor=font_color)
 
-    def get_node_title(self, total_time: float, config: FlowVisorConfig):
+    def get_node_title(self, time_value: TimeValue, config: FlowVisorConfig):
         """
         Returns the title of the node, that is displayed in the diagram.
         """
@@ -112,7 +113,7 @@ class FunctionNode:
         title += "\n"
 
         if config.show_function_time_percantage:
-            percentage = (self.time / total_time) * 100
+            percentage = (self.time / time_value.total_time) * 100
             title += f"{round(percentage, 2)}%"
 
         title += "\n"

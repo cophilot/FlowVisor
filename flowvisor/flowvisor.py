@@ -13,6 +13,7 @@ from flowvisor import utils
 from flowvisor.flowvisor_config import FlowVisorConfig
 from flowvisor.function_node import FunctionNode
 from flowvisor.time_tracker import TimeTracker
+from flowvisor.time_value import TimeValue
 from flowvisor.utils import function_to_id
 
 def vis(func):
@@ -184,6 +185,16 @@ class FlowVisor:
         return total_time
 
     @staticmethod
+    def get_mean_time():
+        """
+        Returns the mean time.
+        """
+        sum_time = 0
+        for node in FlowVisor.NODES:
+            sum_time += node.time
+        return sum_time / len(FlowVisor.NODES)
+
+    @staticmethod
     def draw_meta_data(blank_image):
         """
         Draws some metadata on the graph.
@@ -293,12 +304,14 @@ class FlowVisor:
         """
         Draws the function node.
         """
-        highest_time = FlowVisor.get_highest_time()
-        total_time = FlowVisor.get_total_time()
-        
-        node = func_node.get_as_diagram_node(highest_time,total_time, FlowVisor.CONFIG)
+        time_value = TimeValue()
+        time_value.max_time = FlowVisor.get_highest_time()
+        time_value.total_time = FlowVisor.get_total_time()
+        time_value.mean_time = FlowVisor.get_mean_time()
+
+        node = func_node.get_as_diagram_node(time_value, FlowVisor.CONFIG)
         for child in func_node.children:
-            _ = node >> child.get_as_diagram_node(highest_time, total_time, FlowVisor.CONFIG)
+            _ = node >> child.get_as_diagram_node(time_value, FlowVisor.CONFIG)
 
     @staticmethod
     def is_function_excluded(func):
