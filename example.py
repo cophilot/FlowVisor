@@ -35,7 +35,10 @@ def main():
     print("Thank you for banking with us!")
 
 if __name__ == "__main__":
-    FlowVisor.enable_advanced_overhead_reduction() # Reduce the overhead to a minimum
+    FlowVisor.CONFIG.exclusive_time_mode = True # Enable exclusive time mode
+    FlowVisor.CONFIG.show_flowvisor_settings = True # Show the FlowVisor settings
+    FlowVisor.CONFIG.show_system_info = True # Show system information
+    FlowVisor.CONFIG.show_function_time_percantage = True # Show Percentage of time spent in each function
     main()
     FlowVisor.CONFIG.output_file = "example_flow" # You can add some configureation with the CONFIG object
     FlowVisor.graph() # Generate the graph

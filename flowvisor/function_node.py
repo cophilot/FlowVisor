@@ -56,15 +56,15 @@ class FunctionNode:
 
         return file_name
 
-    def get_as_diagram_node(self,highest_time: float, config: FlowVisorConfig):
+    def get_as_diagram_node(self,highest_time: float, total_time: float, config: FlowVisorConfig):
         """
         Gets the node as a diagram node.
         """
         if self.diagram_node is None:
-            self.generate_diagram_node(highest_time, config)
+            self.generate_diagram_node(highest_time, total_time, config)
         return self.diagram_node
 
-    def generate_diagram_node(self,highest_time: float, config: FlowVisorConfig):
+    def generate_diagram_node(self, highest_time: float, total_time: float, config: FlowVisorConfig):
         """
         Generates the diagram node.
         """
@@ -77,7 +77,7 @@ class FunctionNode:
         size = 1
         size = size * config.node_scale
 
-        title = self.get_node_title(config)
+        title = self.get_node_title(total_time, config)
 
         font_color = config.static_font_color
         if font_color == "":
@@ -90,7 +90,7 @@ class FunctionNode:
                                    height=str(size),
                                    fontcolor=font_color)
 
-    def get_node_title(self, config: FlowVisorConfig):
+    def get_node_title(self, total_time: float, config: FlowVisorConfig):
         """
         Returns the title of the node, that is displayed in the diagram.
         """
@@ -109,7 +109,15 @@ class FunctionNode:
         if config.show_node_avg_time:
             title += f"avg {utils.get_time_as_string(self.time / self.called)}"
 
-        for _ in range(int(config.node_scale)):
+        title += "\n"
+
+        if config.show_function_time_percantage:
+            percentage = (self.time / total_time) * 100
+            title += f"{round(percentage, 2)}%"
+
+        title += "\n"
+
+        for _ in range(int(config.node_scale) - 1 ):
             title += "\n\n"
         return title
 
@@ -251,9 +259,9 @@ class FunctionNode:
         for file in os.listdir(FunctionNode.NODE_IMAGE_CACHE):
             os.remove(f"{FunctionNode.NODE_IMAGE_CACHE}/{file}")
         os.rmdir(FunctionNode.NODE_IMAGE_CACHE)
-        
+
     @staticmethod
-    def from_dict(dict):
+    def from_dict(d):
         """
         Creates a FunctionNode from a dictionary.
         
@@ -261,12 +269,12 @@ class FunctionNode:
             dict: The dictionary to create the FunctionNode from.
         """
         node = FunctionNode(None)
-        node.id = dict["id"]
-        node.uuid = dict["uuid"]
-        node.name = dict["name"]
-        node.file_path = dict["file_path"]
-        node.file_name = dict["file_name"]
-        node.children_ids = [child["uuid"] for child in dict["children"]]
-        node.time = dict["time"]
-        node.called = dict["called"]
+        node.id = d["id"]
+        node.uuid = d["uuid"]
+        node.name = d["name"]
+        node.file_path = d["file_path"]
+        node.file_name = d["file_name"]
+        node.children_ids = [child["uuid"] for child in d["children"]]
+        node.time = d["time"]
+        node.called = d["called"]
         return node

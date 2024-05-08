@@ -71,6 +71,16 @@ class FlowVisor:
         return node
 
     @staticmethod
+    def add_root_node(node):
+        """
+        Adds a root node.
+        """
+        for root in FlowVisor.ROOTS:
+            if root.id == node.id:
+                return
+        FlowVisor.ROOTS.append(node)
+
+    @staticmethod
     def function_called(func):
         """
         Called when a function is called.
@@ -78,9 +88,10 @@ class FlowVisor:
         if FlowVisor.is_function_excluded(func):
             return
 
-        node =FlowVisor.add_function_node(func)
+        node = FlowVisor.add_function_node(func)
+
         if len(FlowVisor.STACK) == 0:
-            FlowVisor.ROOTS.append(node)
+            FlowVisor.add_root_node(node)
         else:
             parent = FlowVisor.STACK[-1]
             parent.add_child(node)
@@ -99,6 +110,11 @@ class FlowVisor:
             return
 
         node = FlowVisor.STACK.pop()
+
+        if len(FlowVisor.STACK) > 0 and FlowVisor.CONFIG.exclusive_time_mode:
+            parent = FlowVisor.STACK[-1]
+            parent.time -= duration
+
         node.got_called(duration)
 
     @staticmethod
@@ -113,12 +129,6 @@ class FlowVisor:
         """
         Generates the graph.
         """
-        highest_time = -1
-        called_nodes = FlowVisor.get_called_nodes_only()
-        for node in called_nodes:
-            if node.time > highest_time:
-                highest_time = node.time
-
         try:
             with Diagram(FlowVisor.CONFIG.graph_title,
                          show=FlowVisor.CONFIG.show_graph,
@@ -134,16 +144,44 @@ class FlowVisor:
                            width=FlowVisor.CONFIG.get_node_scale(),
                            height=FlowVisor.CONFIG.get_node_scale())
 
+                called_nodes = FlowVisor.get_called_nodes_only()
+
                 # Draw nodes
                 if FlowVisor.CONFIG.group_nodes:
-                    FlowVisor.draw_nodes_with_cluster(called_nodes, highest_time)
+                    FlowVisor.draw_nodes_with_cluster(called_nodes)
                 else:
                     for n in called_nodes:
-                        FlowVisor.draw_function_node(n, highest_time)
+                        FlowVisor.draw_function_node(n)
 
         finally:
             # Make sure to clear the cache always
             FunctionNode.clear_node_image_cache()
+
+    @staticmethod
+    def get_highest_time():
+        """
+        Returns the highest time.
+        """
+        highest_time = -1
+        for node in FlowVisor.NODES:
+            if node.time > highest_time:
+                highest_time = node.time
+        return highest_time
+
+    @staticmethod
+    def get_total_time():
+        """
+        Returns the total time.
+        """
+        total_time = 0
+        nodes = FlowVisor.NODES
+        if not FlowVisor.CONFIG.exclusive_time_mode:
+            nodes = FlowVisor.ROOTS
+
+        for node in nodes:
+            total_time += node.time
+
+        return total_time
 
     @staticmethod
     def draw_meta_data(blank_image):
@@ -165,7 +203,7 @@ class FlowVisor:
                 Custom(str(s), blank_image, width="4", height="0.2")
 
     @staticmethod
-    def draw_nodes_with_cluster(nodes: List[FunctionNode], highest_time: float):
+    def draw_nodes_with_cluster(nodes: List[FunctionNode]):
         """
         Draws the nodes with cluster.
         """
@@ -182,7 +220,7 @@ class FlowVisor:
                                                 dark_color=[0xFF, 0xFF, 0xFF])
             with Cluster(cluster_title, graph_attr={"bgcolor": bg_color, "fontcolor": font_color}):
                 for n in row:
-                    FlowVisor.draw_function_node(n, highest_time)
+                    FlowVisor.draw_function_node(n)
 
     @staticmethod
     def get_node_sorted_by_filename(nodes: List[FunctionNode]):
@@ -251,13 +289,16 @@ class FlowVisor:
         FlowVisor.graph()
 
     @staticmethod
-    def draw_function_node(func_node: FunctionNode, highest_time):
+    def draw_function_node(func_node: FunctionNode):
         """
         Draws the function node.
         """
-        node = func_node.get_as_diagram_node(highest_time, FlowVisor.CONFIG)
+        highest_time = FlowVisor.get_highest_time()
+        total_time = FlowVisor.get_total_time()
+        
+        node = func_node.get_as_diagram_node(highest_time,total_time, FlowVisor.CONFIG)
         for child in func_node.children:
-            _ = node >> child.get_as_diagram_node(highest_time, FlowVisor.CONFIG)
+            _ = node >> child.get_as_diagram_node(highest_time, total_time, FlowVisor.CONFIG)
 
     @staticmethod
     def is_function_excluded(func):

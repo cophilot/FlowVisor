@@ -17,6 +17,7 @@ class FlowVisorConfig:
         self.node_scale: float = 2.0
         self.show_node_file: bool = True
         self.show_node_call_count: bool = True
+        self.show_function_time_percantage: bool = False
         self.show_node_avg_time: bool = True
         self.static_font_color: str = ""
         self.show_timestamp: bool = False
@@ -29,6 +30,7 @@ class FlowVisorConfig:
 
         # Functional settings
         self.reduce_overhead: bool = True
+        self.exclusive_time_mode: bool = False
         self.advanced_overhead_reduction = None
 
         # Other
@@ -44,4 +46,5 @@ class FlowVisorConfig:
         s = "Reduce Overhead: " + str(self.reduce_overhead) + "\n"
         if self.reduce_overhead and self.advanced_overhead_reduction is not None:
             s += "Advanced Overhead reduction: " + utils.get_time_as_string(self.advanced_overhead_reduction) + "\n"
+        s += "Exclusive Time Mode: " + str(self.exclusive_time_mode) + "\n"
         return s
