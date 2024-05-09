@@ -7,3 +7,7 @@ build/
 example_flow*
 *.pickle
 token
+flowvisor_verifier.json
+example1.py
+verify
+*__test.py

@@ -1,25 +1,40 @@
 """
 The FlowVisor is a package that visualizes the flow of functions in a codebase.
 """
+
 import datetime
 import json
 import timeit
 from typing import List
-#from inspect import getmembers, isfunction, ismodule
 import pickle
 from diagrams import Diagram, Cluster
 from diagrams.custom import Custom
-from flowvisor import utils
+from flowvisor import logger, utils
 from flowvisor.flowvisor_config import FlowVisorConfig
+from flowvisor.flowvisor_verifier import FlowVisorVerifier, vis_verifier
 from flowvisor.function_node import FunctionNode
+from flowvisor.sankey import make_sankey_diagram
 from flowvisor.time_tracker import TimeTracker
 from flowvisor.time_value import TimeValue
 from flowvisor.utils import function_to_id
 
+
 def vis(func):
+    """
+    The vis decorator
+    """
+
+    def wrapper(*args, **kwargs):
+        return FlowVisor.VIS_FUNCTION(func)(*args, **kwargs)
+
+    return wrapper
+
+
+def vis_impl(func):
     """
     Decorator that visualizes the function.
     """
+
     def wrapper(*args, **kwargs):
         TimeTracker.stop()
 
@@ -43,13 +58,17 @@ def vis(func):
 
         TimeTracker.start(reduce_overhead)
         return result
+
     return wrapper
+
 
 class FlowVisor:
     """
-    The FlowVisor class is responsible for managing the flow of the functions 
+    The FlowVisor class is responsible for managing the flow of the functions
     and generating the graph.
     """
+
+    VIS_FUNCTION = vis_impl
 
     NODES: List[FunctionNode] = []
     ROOTS: List[FunctionNode] = []
@@ -57,6 +76,7 @@ class FlowVisor:
     CONFIG = FlowVisorConfig()
 
     EXCLUDE_FUNCTIONS = []
+    VERIFIER_MODE = False
 
     @staticmethod
     def add_function_node(func):
@@ -112,9 +132,9 @@ class FlowVisor:
 
         node = FlowVisor.STACK.pop()
 
-        if len(FlowVisor.STACK) > 0 and FlowVisor.CONFIG.exclusive_time_mode:
+        if len(FlowVisor.STACK) > 0:
             parent = FlowVisor.STACK[-1]
-            parent.time -= duration
+            parent.child_time += duration
 
         node.got_called(duration)
 
@@ -126,24 +146,40 @@ class FlowVisor:
         return [node for node in FlowVisor.NODES if node.called > 0]
 
     @staticmethod
-    def graph():
+    def graph(verify=False, verify_file_name="flowvisor_verifier.json"):
         """
         Generates the graph.
         """
+        if FlowVisor.VERIFIER_MODE:
+            logger.log("Can not generate graph in verifier mode!")
+            return
+
+        verify_text = None
+        if verify:
+            if FlowVisor.verify(verify_file_name):
+                verify_text = "Verified ✅"
+            else:
+                verify_text = "Not Verified ❌"
+
         try:
-            with Diagram(FlowVisor.CONFIG.graph_title,
-                         show=FlowVisor.CONFIG.show_graph,
-                         filename=FlowVisor.CONFIG.output_file,
-                         direction="LR"):
+            with Diagram(
+                FlowVisor.CONFIG.graph_title,
+                show=FlowVisor.CONFIG.show_graph,
+                filename=FlowVisor.CONFIG.output_file,
+                direction="LR",
+            ):
 
                 blank_image = FunctionNode.make_node_image_cache()
 
-                FlowVisor.draw_meta_data(blank_image)
+                FlowVisor.draw_meta_data(blank_image, verify_text)
 
                 if FlowVisor.CONFIG.logo != "":
-                    Custom("", FlowVisor.CONFIG.logo,
-                           width=FlowVisor.CONFIG.get_node_scale(),
-                           height=FlowVisor.CONFIG.get_node_scale())
+                    Custom(
+                        "",
+                        FlowVisor.CONFIG.logo,
+                        width=FlowVisor.CONFIG.get_node_scale(),
+                        height=FlowVisor.CONFIG.get_node_scale(),
+                    )
 
                 called_nodes = FlowVisor.get_called_nodes_only()
 
@@ -159,14 +195,22 @@ class FlowVisor:
             FunctionNode.clear_node_image_cache()
 
     @staticmethod
+    def sankey_diagram():
+        """
+        Generates the sankey diagram.
+        """
+        make_sankey_diagram(FlowVisor.ROOTS, FlowVisor.NODES)
+
+    @staticmethod
     def get_highest_time():
         """
         Returns the highest time.
         """
         highest_time = -1
         for node in FlowVisor.NODES:
-            if node.time > highest_time:
-                highest_time = node.time
+            node_time = node.get_time(FlowVisor.CONFIG.exclusive_time_mode)
+            if node_time > highest_time:
+                highest_time = node_time
         return highest_time
 
     @staticmethod
@@ -180,7 +224,7 @@ class FlowVisor:
             nodes = FlowVisor.ROOTS
 
         for node in nodes:
-            total_time += node.time
+            total_time += node.get_time(FlowVisor.CONFIG.exclusive_time_mode)
 
         return total_time
 
@@ -191,15 +235,18 @@ class FlowVisor:
         """
         sum_time = 0
         for node in FlowVisor.NODES:
-            sum_time += node.time
+            sum_time += node.get_time(FlowVisor.CONFIG.exclusive_time_mode)
+
         return sum_time / len(FlowVisor.NODES)
 
     @staticmethod
-    def draw_meta_data(blank_image):
+    def draw_meta_data(blank_image, verify_text):
         """
         Draws some metadata on the graph.
         """
         with Cluster("Metadata", graph_attr={"bgcolor": "#FFFFFF"}):
+            if verify_text is not None:
+                Custom(verify_text, blank_image, width="2", height="0.1")
             if FlowVisor.CONFIG.show_system_info:
                 sys_info = utils.get_sys_info()
                 text = ""
@@ -219,17 +266,29 @@ class FlowVisor:
         Draws the nodes with cluster.
         """
         sorted_nodes = FlowVisor.get_node_sorted_by_filename(nodes)
-        total_times = [sum([n.get_time_without_children() for n in row]) for row in sorted_nodes]
+        total_times = [
+            sum([n.get_time_without_children() for n in row]) for row in sorted_nodes
+        ]
         highest_time_file_time = max(total_times)
         for index, row in enumerate(sorted_nodes):
-            cluster_title = f"{row[0].file_name} ({utils.get_time_as_string(total_times[index])})"
-            bg_color = utils.value_to_hex_color(total_times[index], highest_time_file_time,
-                                                light_color=[0xFF, 0xFF, 0xFF],
-                                                dark_color=[0xAA, 0xAA, 0xAA])
-            font_color = utils.value_to_hex_color(total_times[index], highest_time_file_time,
-                                                light_color=[0x00, 0x00, 0x00],
-                                                dark_color=[0xFF, 0xFF, 0xFF])
-            with Cluster(cluster_title, graph_attr={"bgcolor": bg_color, "fontcolor": font_color}):
+            cluster_title = (
+                f"{row[0].file_name} ({utils.get_time_as_string(total_times[index])})"
+            )
+            bg_color = utils.value_to_hex_color(
+                total_times[index],
+                highest_time_file_time,
+                light_color=[0xFF, 0xFF, 0xFF],
+                dark_color=[0xAA, 0xAA, 0xAA],
+            )
+            font_color = utils.value_to_hex_color(
+                total_times[index],
+                highest_time_file_time,
+                light_color=[0x00, 0x00, 0x00],
+                dark_color=[0xFF, 0xFF, 0xFF],
+            )
+            with Cluster(
+                cluster_title, graph_attr={"bgcolor": bg_color, "fontcolor": font_color}
+            ):
                 for n in row:
                     FlowVisor.draw_function_node(n)
 
@@ -260,10 +319,14 @@ class FlowVisor:
         return [node.to_dict() for node in FlowVisor.NODES]
 
     @staticmethod
-    def export(file: str, export_type = "pickle"):
+    def export(file: str, export_type="pickle"):
         """
         Saves the flow to a file.
         """
+        if FlowVisor.VERIFIER_MODE:
+            logger.log("Can not export in verifier mode!")
+            return
+
         nodes_dict = FlowVisor.get_nodes_as_dict()
         if export_type == "json":
             if not file.endswith(".json"):
@@ -354,7 +417,7 @@ class FlowVisor:
         n = 50000
         t = timeit.timeit(setup="import time", stmt="time.time()", number=n)
         mean = t / n
-        print(f"Mean time for time.time() is: {utils.get_time_as_string(mean)}")
+        logger.log(f"Mean time for time.time() is: {utils.get_time_as_string(mean)}")
         FlowVisor.CONFIG.advanced_overhead_reduction = mean
 
     @staticmethod
@@ -384,6 +447,37 @@ class FlowVisor:
         Sets the configuration.
         """
         FlowVisor.CONFIG = config
+
+    @staticmethod
+    def enable_verifier_mode():
+        """
+        Enables the verifier mode.
+        """
+        FlowVisor.VERIFIER_MODE = True
+        FlowVisor.VIS_FUNCTION = vis_verifier
+        logger.log("*** Running FlowVisor in verify mode ***")
+
+    @staticmethod
+    def verify_export(file_name="flowvisor_verifier.json"):
+        """
+        Exports the verifier.
+        """
+        if not FlowVisor.VERIFIER_MODE:
+            logger.log("Can not export verify in non-verifier mode!")
+            return
+        FlowVisorVerifier.export(file_name)
+
+    @staticmethod
+    def verify(verify_file_name="flowvisor_verifier.json"):
+        """
+        Checks the result against the verifier.
+        """
+        if FlowVisor.VERIFIER_MODE:
+            logger.log("Can not verify in verifier mode!")
+            return False
+        return FlowVisorVerifier.verify(
+            FlowVisor.NODES, verify_file_name, FlowVisor.CONFIG.verify_threshold
+        )
 
     '''
     @staticmethod

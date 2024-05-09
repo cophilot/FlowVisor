@@ -1,6 +1,7 @@
 """
 A node in the function call graph.
 """
+
 import os
 from typing import List
 import uuid
@@ -29,21 +30,24 @@ class FunctionNode:
             self.file_name: str = os.path.basename(self.file_path)
         self.children: List[FunctionNode] = []
         self.children_ids: List[str] = []
-        self.time: float = 0
+        self.__time: float = 0
         self.diagram_node = None
         self.called: int = 0
+        self.child_time: float = 0
 
-    def export_node_image(self, time_value: TimeValue):
+    def export_node_image(self, time_value: TimeValue, config: FlowVisorConfig):
         """
         Generates the node image background.
         """
         dim = FunctionNode.NODE_IMAGE_SCALE
-        image = Image.new('RGB', (dim, dim), 'white')
+        image = Image.new("RGB", (dim, dim), "white")
         draw = ImageDraw.Draw(image)
 
-        color = utils.value_to_hex_color(self.time, time_value.max_time)
+        t = self.get_time(config.exclusive_time_mode)
 
-        if self.time >= time_value.max_time * 0.9:
+        color = utils.value_to_hex_color_using_mean(t, time_value.mean_time)
+
+        if t >= time_value.max_time * (1 - config.outline_threshold):
             # draw outline
             draw.rectangle((0, 0, dim, dim), fill="#ff0000")
             ## draw inner
@@ -69,27 +73,24 @@ class FunctionNode:
         """
         Generates the diagram node.
         """
-        node_image = self.export_node_image(time_value.max_time)
+        node_image = self.export_node_image(time_value, config)
 
-        size = self.time / time_value.max_time
-        if size < 0.1:
-            size = 0.1
+        size = config.node_scale
 
-        size = 1
-        size = size * config.node_scale
-
-        title = self.get_node_title(time_value , config)
+        title = self.get_node_title(time_value, config)
 
         font_color = config.static_font_color
         if font_color == "":
-            font_color = utils.value_to_hex_color(self.time, time_value.max_time,
-                                                  dark_color=[0xFF, 0xC0, 0x82],
-                                                  light_color=[0x00, 0x00, 0x00])
+            font_color = utils.value_to_hex_color_using_mean(
+                self.get_time(config.exclusive_time_mode),
+                time_value.mean_time,
+                dark_color=[0xFF, 0xC0, 0x82],
+                light_color=[0x00, 0x00, 0x00],
+            )
 
-        self.diagram_node = Custom(title, node_image,
-                                   width=str(size),
-                                   height=str(size),
-                                   fontcolor=font_color)
+        self.diagram_node = Custom(
+            title, node_image, width=str(size), height=str(size), fontcolor=font_color
+        )
 
     def get_node_title(self, time_value: TimeValue, config: FlowVisorConfig):
         """
@@ -99,8 +100,8 @@ class FunctionNode:
 
         if config.show_node_file:
             title += self.file_name + "\n"
-
-        title += utils.get_time_as_string(self.time)
+        t = self.get_time(config.exclusive_time_mode)
+        title += utils.get_time_as_string(t)
 
         if config.show_node_call_count:
             title += f" ({self.called})"
@@ -108,31 +109,31 @@ class FunctionNode:
         title += "\n"
 
         if config.show_node_avg_time:
-            title += f"avg {utils.get_time_as_string(self.time / self.called)}"
+            title += f"avg {utils.get_time_as_string(t / self.called)}"
 
         title += "\n"
 
         if config.show_function_time_percantage:
-            percentage = (self.time / time_value.total_time) * 100
+            percentage = (t / time_value.total_time) * 100
             title += f"{round(percentage, 2)}%"
 
         title += "\n"
 
-        for _ in range(int(config.node_scale) - 1 ):
+        for _ in range(int(config.node_scale) - 1):
             title += "\n\n"
         return title
 
-    def got_called(self,duration: float):
+    def got_called(self, duration: float):
         """
         The function got called.
-        
+
         Args:
             duration: The time it took to execute the function.
         """
         self.called += 1
         self.set_time(duration)
 
-    def add_child(self, child): # type: ignore
+    def add_child(self, child):  # type: ignore
         """
         Adds a child node to the current node.
 
@@ -153,27 +154,7 @@ class FunctionNode:
         Args:
             time (float): The time it took to execute the function.
         """
-        self.time += time
-
-    def to_json(self, inline = 0):
-        """
-        Returns the node as a json string.
-        
-        Args:
-            inline: The number of spaces to indent.
-        """
-        inline_str = "  " * inline
-        result = f'"{self.file_function_name()}({self.time})"'
-        if len(self.children) == 0:
-            return inline_str + result
-        result += ":["
-        for index,child in enumerate(self.children):
-            if index > 0:
-                result += ","
-            result += f"\n{child.to_json(inline + 1)}"
-        result += f"\n{inline_str}]"
-        result = inline_str + "{"+ result + "}"
-        return result
+        self.__time += time
 
     def file_function_name(self):
         """
@@ -184,10 +165,10 @@ class FunctionNode:
     def __str__(self):
         return self.file_function_name()
 
-    def to_dict(self, short = False):
+    def to_dict(self, short=False):
         """
         Gets the node as a dictionary.
-        
+
         Args:
             short: If the dictionary should be short.
         """
@@ -207,14 +188,15 @@ class FunctionNode:
             "file_path": self.file_path,
             "file_name": self.file_name,
             "children": [child.to_dict(True) for child in self.children],
-            "time": self.time,
-            "called": self.called
+            "exclusive_time": self.get_time(True),
+            "inclusive_time": self.get_time(False),
+            "called": self.called,
         }
 
     def resolve_children_ids(self, all_nodes):
         """
         Resolves the children ids.
-        
+
         Args:
             all_nodes: All nodes in the graph.
         """
@@ -228,16 +210,27 @@ class FunctionNode:
         """
         Gets the time without the children.
         """
-        time = self.time
+        time = self.get_time()
         for child in self.children:
             time -= child.time
         return time
+
+    def get_time(self, exclusive=True):
+        """
+        Gets the time of the node.
+
+        Args:
+            exclusive: If the time should be exclusive.
+        """
+        if exclusive:
+            return self.__time - self.child_time
+        return self.__time
 
     @staticmethod
     def make_node_image_cache():
         """
         Makes the node image cache.
-        
+
         Returns:
             The file name of the blank image.
         """
@@ -246,7 +239,7 @@ class FunctionNode:
         FunctionNode.NODE_IMAGE_CACHE = os.path.abspath(FunctionNode.NODE_IMAGE_CACHE)
 
         dim = FunctionNode.NODE_IMAGE_SCALE
-        image = Image.new('RGB', (dim, dim), 'white')
+        image = Image.new("RGB", (dim, dim), "white")
 
         file_name = f"{FunctionNode.NODE_IMAGE_CACHE}/_blank.png"
         image.save(file_name)
@@ -265,7 +258,7 @@ class FunctionNode:
     def from_dict(d):
         """
         Creates a FunctionNode from a dictionary.
-        
+
         Args:
             dict: The dictionary to create the FunctionNode from.
         """
