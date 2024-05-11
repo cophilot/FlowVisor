@@ -57,3 +57,13 @@ class FlowVisorConfig:
             )
         s += "Exclusive Time Mode: " + str(self.exclusive_time_mode) + "\n"
         return s
+
+    @staticmethod
+    def from_dict(config_dict: dict):
+        """
+        Create a FlowVisorConfig object from a dictionary
+        """
+        config = FlowVisorConfig()
+        for key in config_dict:
+            setattr(config, key, config_dict[key])
+        return config

@@ -442,11 +442,25 @@ class FlowVisor:
         FlowVisor.CONFIG.dev_mode = True
 
     @staticmethod
-    def set_config(config: FlowVisorConfig):
+    def set_config(config: dict):
         """
         Sets the configuration.
         """
-        FlowVisor.CONFIG = config
+
+        FlowVisor.CONFIG = FlowVisorConfig.from_dict(config)
+
+    @staticmethod
+    def auto_verifier_mode(verifier_limit=10, file_name="flowvisor_verifier.json"):
+        """
+        Automatically enables the verifier mode.
+        """
+        count = FlowVisorVerifier.get_count_of_file(file_name)
+        if count < verifier_limit:
+            FlowVisor.enable_verifier_mode()
+            return
+        logger.log(
+            f"Verifier mode not enabled. Count of calls is {count} and the limit is {verifier_limit}"
+        )
 
     @staticmethod
     def enable_verifier_mode():

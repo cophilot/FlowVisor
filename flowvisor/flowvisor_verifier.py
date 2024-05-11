@@ -39,17 +39,26 @@ def vis_verifier2(func):
 
 
 class FlowVisorVerifier:
+    """
+    FlowVisor verifier class
+    """
 
     ENTRIES = []
 
     @staticmethod
-    def add_entry(func, time: float):
+    def add_entry(func, time_value: float):
+        """
+        Add an entry to the verifier
+        """
         FlowVisorVerifier.ENTRIES.append(
-            {"id": utils.function_to_id(func), "time": time}
+            {"id": utils.function_to_id(func), "time": time_value}
         )
 
     @staticmethod
     def summaries_entries(entries):
+        """
+        Summarize the entries by adding the time of the same id
+        """
         new_entries = []
         for entry in entries:
             id_exists = False
@@ -64,15 +73,17 @@ class FlowVisorVerifier:
 
     @staticmethod
     def export(file_name: str):
-        file_name = utils.apply_file_end(file_name, "json")
+        """
+        Export the verifier entries to a file
+        """
         new_entries = FlowVisorVerifier.summaries_entries(FlowVisorVerifier.ENTRIES)
         device_name = utils.get_device_name()
         meta = {"device_name": device_name, "count": 0}
         old_data = None
 
-        if os.path.exists(file_name):
-            with open(file_name, "r", encoding="utf-8") as f:
-                existing_content = json.load(f)
+        existing_content = FlowVisorVerifier.read_existing_file(file_name)
+
+        if existing_content is not None:
             meta = existing_content["meta"]
             old_data = existing_content["data"]
             new_entries = FlowVisorVerifier.avarage_entries(
@@ -96,6 +107,9 @@ class FlowVisorVerifier:
 
     @staticmethod
     def avarage_entries(old_data, new_data, count):
+        """
+        Avergae the entries
+        """
         for entry in new_data:
             id_exists = False
             for old_entry in old_data:
@@ -112,6 +126,16 @@ class FlowVisorVerifier:
 
     @staticmethod
     def set_min_max(old_data, new_data):
+        """
+        Sets the min and max values for the entries
+
+        Args:
+            old_data (dict): The old data
+            new_data (dict): The new data
+
+        Returns:
+            dict: The new data with min and max values
+        """
         if old_data is None:
             for entry in new_data:
                 entry["min"] = entry["time"]
@@ -134,8 +158,7 @@ class FlowVisorVerifier:
             logger.log(f"Verify file {verify_file_name} not found...")
             return
 
-        with open(verify_file_name, "r", encoding="utf-8") as f:
-            content = json.load(f)
+        content = FlowVisorVerifier.read_existing_file(verify_file_name)
 
         is_verified = True
         device_name = content["meta"]["device_name"]
@@ -180,8 +203,54 @@ class FlowVisorVerifier:
 
     @staticmethod
     def is_function_verified(entry, node_time, threshold):
+        max_value = entry["max"]
+        min_value = entry["min"]
         mean_time = entry["time"]
-        interval = entry["max"] - entry["min"]
-        offset = max(interval, mean_time * threshold)
+        interval = max_value - min_value
 
-        return mean_time - offset <= node_time and node_time <= mean_time + offset
+        offset_interval = interval * threshold
+        offset_meean = mean_time * threshold
+
+        if offset_interval > offset_meean:
+            return (
+                min_value - offset_interval <= node_time
+                and node_time <= max_value + offset_interval
+            )
+        return (
+            mean_time - offset_meean <= node_time
+            and node_time <= mean_time + offset_meean
+        )
+
+    @staticmethod
+    def read_existing_file(file_name: str):
+        """
+        Read the existing verifier file
+
+        Args:
+            file_name (str): The file name
+
+        Returns:
+            dict: The content of the file or None if the file does not exist
+        """
+        file_name = utils.apply_file_end(file_name, "json")
+        if not os.path.exists(file_name):
+            return None
+        with open(file_name, "r", encoding="utf-8") as f:
+            content = json.load(f)
+        return content
+
+    @staticmethod
+    def get_count_of_file(file_name: str):
+        """
+        Get the calls of a file
+
+        Args:
+            file_name (str): The file name
+
+        Returns:
+            int: The number of calls
+        """
+        content = FlowVisorVerifier.read_existing_file(file_name)
+        if content is None:
+            return 0
+        return content["meta"]["count"]
