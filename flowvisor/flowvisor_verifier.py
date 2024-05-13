@@ -189,11 +189,11 @@ class FlowVisorVerifier:
                 print_warning = True
 
             time_delta_direction = "more"
-            time_delta_direction_arrow = "🔼"
+            time_delta_direction_arrow = "📈"
             if time_delta < 0:
                 time_delta *= -1
                 time_delta_direction = "less"
-                time_delta_direction_arrow = "🔽"
+                time_delta_direction_arrow = "📉"
 
             Logger.log(
                 f"  Function '{node.file_function_name()}' took {utils.get_time_as_string(time_delta)} {time_delta_direction} than expected ({time_delta_percentage * 100}%) {time_delta_direction_arrow}{'🚨' if print_warning else ''}"

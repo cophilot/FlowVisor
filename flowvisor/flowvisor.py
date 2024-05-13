@@ -301,7 +301,9 @@ class FlowVisor:
                 pickle.dump(nodes_dict, f)
 
     @staticmethod
-    def generate_graph(file: str = ""):
+    def generate_graph(
+        file: str = "", verify=False, verify_file_name="flowvisor_verifier.json"
+    ):
         """
         Generates the graph from a file.
         """
@@ -321,7 +323,7 @@ class FlowVisor:
         for node in FlowVisor.NODES:
             node.resolve_children_ids(FlowVisor.NODES)
 
-        FlowVisor.graph()
+        FlowVisor.graph(verify, verify_file_name)
 
     @staticmethod
     def draw_function_node(func_node: FunctionNode):
