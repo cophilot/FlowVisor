@@ -1,7 +1,6 @@
 <div align="center">
   <br />
-  <!-- <img src="" alt="FlowVisorLogo" width="30%"/> -->
-  <h1>FlowVisor</h1>
+  <img src="https://raw.githubusercontent.com/cophilot/FlowVisor/main/assets/logo.png" alt="FlowVisor" width="60%"/>
   <p>
     Visualize the flow of your python code.
   </p>
