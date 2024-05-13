@@ -4,6 +4,7 @@ The FlowVisor is a package that visualizes the flow of functions in a codebase.
 
 import datetime
 import json
+import os
 import timeit
 from typing import List
 import pickle
@@ -307,6 +308,9 @@ class FlowVisor:
         """
         Generates the graph from a file.
         """
+        if not os.path.exists(file):
+            Logger.log(f"File {file} does not exist!")
+            return
         mode = "pickle"
         if file.endswith(".json"):
             mode = "json"

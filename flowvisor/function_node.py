@@ -277,6 +277,8 @@ class FunctionNode:
         node.file_path = d["file_path"]
         node.file_name = d["file_name"]
         node.children_ids = [child["uuid"] for child in d["children"]]
-        node.time = d["time"]
-        node.called = d["called"]
+        ex_time = d["exclusive_time"]
+        in_time = d["inclusive_time"]
+        node.set_time(in_time)
+        node.child_time = in_time - ex_time
         return node
