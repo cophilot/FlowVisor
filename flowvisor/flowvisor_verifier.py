@@ -5,7 +5,8 @@ import pstats
 import time
 from typing import List
 
-from flowvisor import logger, utils
+from flowvisor import utils
+from flowvisor.logger import Logger
 from flowvisor.function_node import FunctionNode
 
 
@@ -155,7 +156,7 @@ class FlowVisorVerifier:
         verify_file_name = utils.apply_file_end(verify_file_name, "json")
 
         if not os.path.exists(verify_file_name):
-            logger.log(f"Verify file {verify_file_name} not found...")
+            Logger.log(f"Verify file {verify_file_name} not found...")
             return
 
         content = FlowVisorVerifier.read_existing_file(verify_file_name)
@@ -163,15 +164,16 @@ class FlowVisorVerifier:
         is_verified = True
         device_name = content["meta"]["device_name"]
         if device_name != utils.get_device_name():
-            logger.log(
+            Logger.log(
                 f"🚨 WARNING 🚨 Verifier file is not clean: Wrong device {device_name}"
             )
             is_verified = False
 
+        Logger.log("Verifying functions...")
         for entry in content["data"]:
             node = utils.get_node_by_id(entry["id"], nodes)
             if node is None:
-                logger.log(f"Function with id {entry['id']} not found")
+                Logger.log(f"Function with id {entry['id']} not found")
                 continue
 
             node_time = node.get_time(exclusive=False)
@@ -191,14 +193,14 @@ class FlowVisorVerifier:
                 time_delta *= -1
                 time_delta_direction = "less"
 
-            logger.log(
-                f"Function '{node.name}' took {utils.get_time_as_string(time_delta)} {time_delta_direction} than expected ({time_delta_percentage * 100}%) {'🚨' if print_warning else ''}"
+            Logger.log(
+                f"  Function '{node.name}' took {utils.get_time_as_string(time_delta)} {time_delta_direction} than expected ({time_delta_percentage * 100}%) {'🚨' if print_warning else ''}"
             )
 
         if is_verified:
-            logger.log("All functions are verified! ✅")
+            Logger.log("All functions are verified! ✅")
         else:
-            logger.log("Some functions are not verified! ❌")
+            Logger.log("Some functions are not verified! ❌")
         return is_verified
 
     @staticmethod

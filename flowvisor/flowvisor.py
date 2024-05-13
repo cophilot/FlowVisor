@@ -9,7 +9,8 @@ from typing import List
 import pickle
 from diagrams import Diagram, Cluster
 from diagrams.custom import Custom
-from flowvisor import logger, utils
+from flowvisor import utils
+from flowvisor.logger import Logger
 from flowvisor.flowvisor_config import FlowVisorConfig
 from flowvisor.flowvisor_verifier import FlowVisorVerifier, vis_verifier
 from flowvisor.function_node import FunctionNode
@@ -151,7 +152,7 @@ class FlowVisor:
         Generates the graph.
         """
         if FlowVisor.VERIFIER_MODE:
-            logger.log("Can not generate graph in verifier mode!")
+            Logger.log("Can not generate graph in verifier mode!")
             return
 
         verify_text = None
@@ -324,7 +325,7 @@ class FlowVisor:
         Saves the flow to a file.
         """
         if FlowVisor.VERIFIER_MODE:
-            logger.log("Can not export in verifier mode!")
+            Logger.log("Can not export in verifier mode!")
             return
 
         nodes_dict = FlowVisor.get_nodes_as_dict()
@@ -417,7 +418,7 @@ class FlowVisor:
         n = 50000
         t = timeit.timeit(setup="import time", stmt="time.time()", number=n)
         mean = t / n
-        logger.log(f"Mean time for time.time() is: {utils.get_time_as_string(mean)}")
+        Logger.log(f"Mean time for time.time() is: {utils.get_time_as_string(mean)}")
         FlowVisor.CONFIG.advanced_overhead_reduction = mean
 
     @staticmethod
@@ -458,7 +459,7 @@ class FlowVisor:
         if count < verifier_limit:
             FlowVisor.enable_verifier_mode()
             return
-        logger.log(
+        Logger.log(
             f"Verifier mode not enabled. Count of calls is {count} and the limit is {verifier_limit}"
         )
 
@@ -469,7 +470,7 @@ class FlowVisor:
         """
         FlowVisor.VERIFIER_MODE = True
         FlowVisor.VIS_FUNCTION = vis_verifier
-        logger.log("*** Running FlowVisor in verify mode ***")
+        Logger.log("*** Running FlowVisor in verify mode ***")
 
     @staticmethod
     def verify_export(file_name="flowvisor_verifier.json"):
@@ -477,7 +478,7 @@ class FlowVisor:
         Exports the verifier.
         """
         if not FlowVisor.VERIFIER_MODE:
-            logger.log("Can not export verify in non-verifier mode!")
+            Logger.log("Can not export verify in non-verifier mode!")
             return
         FlowVisorVerifier.export(file_name)
 
@@ -487,11 +488,25 @@ class FlowVisor:
         Checks the result against the verifier.
         """
         if FlowVisor.VERIFIER_MODE:
-            logger.log("Can not verify in verifier mode!")
+            Logger.log("Can not verify in verifier mode!")
             return False
         return FlowVisorVerifier.verify(
             FlowVisor.NODES, verify_file_name, FlowVisor.CONFIG.verify_threshold
         )
+
+    @staticmethod
+    def set_log_file(file_name: str = "flowvisor.log"):
+        """
+        Sets the log file.
+        """
+        Logger.LOG_FILE = file_name
+
+    @staticmethod
+    def disable_console_logging():
+        """
+        Disables console logging.
+        """
+        Logger.LOG_TO_CONSOLE = False
 
     '''
     @staticmethod
