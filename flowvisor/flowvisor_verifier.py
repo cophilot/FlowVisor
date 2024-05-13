@@ -189,11 +189,11 @@ class FlowVisorVerifier:
                 print_warning = True
 
             time_delta_direction = "more"
-            time_delta_direction_arrow = "📈"
+            time_delta_direction_arrow = "🔼"
             if time_delta < 0:
                 time_delta *= -1
                 time_delta_direction = "less"
-                time_delta_direction_arrow = "📉"
+                time_delta_direction_arrow = "🔽"
 
             Logger.log(
                 f"  Function '{node.file_function_name()}' took {utils.get_time_as_string(time_delta)} {time_delta_direction} than expected ({time_delta_percentage * 100}%) {time_delta_direction_arrow}{'🚨' if print_warning else ''}"
@@ -210,20 +210,12 @@ class FlowVisorVerifier:
         max_value = entry["max"]
         min_value = entry["min"]
         mean_time = entry["time"]
-        interval = max_value - min_value
 
-        offset_interval = interval * threshold
-        offset_meean = mean_time * threshold
+        if min_value <= node_time and node_time <= max_value:
+            return True
 
-        if offset_interval > offset_meean:
-            return (
-                min_value - offset_interval <= node_time
-                and node_time <= max_value + offset_interval
-            )
-        return (
-            mean_time - offset_meean <= node_time
-            and node_time <= mean_time + offset_meean
-        )
+        offset = mean_time * threshold
+        return mean_time - offset <= node_time and node_time <= mean_time + offset
 
     @staticmethod
     def read_existing_file(file_name: str):
