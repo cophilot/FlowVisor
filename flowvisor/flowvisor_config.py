@@ -34,6 +34,7 @@ class FlowVisorConfig:
         self.reduce_overhead: bool = True
         self.exclusive_time_mode: bool = True
         self.advanced_overhead_reduction = None
+        self.use_avg_time: bool = False
 
         # Verifier settings
         self.verify_threshold: float = 0.2
@@ -48,6 +49,9 @@ class FlowVisorConfig:
         return str(self.node_scale)
 
     def get_functional_settings_string(self):
+        """
+        Returns a string with the functional settings
+        """
         s = "Reduce Overhead: " + str(self.reduce_overhead) + "\n"
         if self.reduce_overhead and self.advanced_overhead_reduction is not None:
             s += (
@@ -56,6 +60,7 @@ class FlowVisorConfig:
                 + "\n"
             )
         s += "Exclusive Time Mode: " + str(self.exclusive_time_mode) + "\n"
+        s += "Use Average Time: " + str(self.use_avg_time) + "\n"
         return s
 
     @staticmethod

@@ -203,44 +203,6 @@ class FlowVisor:
         make_sankey_diagram(FlowVisor.ROOTS, FlowVisor.NODES)
 
     @staticmethod
-    def get_highest_time():
-        """
-        Returns the highest time.
-        """
-        highest_time = -1
-        for node in FlowVisor.NODES:
-            node_time = node.get_time(FlowVisor.CONFIG.exclusive_time_mode)
-            if node_time > highest_time:
-                highest_time = node_time
-        return highest_time
-
-    @staticmethod
-    def get_total_time():
-        """
-        Returns the total time.
-        """
-        total_time = 0
-        nodes = FlowVisor.NODES
-        if not FlowVisor.CONFIG.exclusive_time_mode:
-            nodes = FlowVisor.ROOTS
-
-        for node in nodes:
-            total_time += node.get_time(FlowVisor.CONFIG.exclusive_time_mode)
-
-        return total_time
-
-    @staticmethod
-    def get_mean_time():
-        """
-        Returns the mean time.
-        """
-        sum_time = 0
-        for node in FlowVisor.NODES:
-            sum_time += node.get_time(FlowVisor.CONFIG.exclusive_time_mode)
-
-        return sum_time / len(FlowVisor.NODES)
-
-    @staticmethod
     def draw_meta_data(blank_image, verify_text):
         """
         Draws some metadata on the graph.
@@ -267,9 +229,7 @@ class FlowVisor:
         Draws the nodes with cluster.
         """
         sorted_nodes = FlowVisor.get_node_sorted_by_filename(nodes)
-        total_times = [
-            sum([n.get_time_without_children() for n in row]) for row in sorted_nodes
-        ]
+        total_times = [sum([n.get_time() for n in row]) for row in sorted_nodes]
         highest_time_file_time = max(total_times)
         for index, row in enumerate(sorted_nodes):
             cluster_title = (
@@ -368,10 +328,7 @@ class FlowVisor:
         """
         Draws the function node.
         """
-        time_value = TimeValue()
-        time_value.max_time = FlowVisor.get_highest_time()
-        time_value.total_time = FlowVisor.get_total_time()
-        time_value.mean_time = FlowVisor.get_mean_time()
+        time_value = TimeValue(FlowVisor.NODES, FlowVisor.CONFIG, FlowVisor.ROOTS)
 
         node = func_node.get_as_diagram_node(time_value, FlowVisor.CONFIG)
         for child in func_node.children:
@@ -507,49 +464,3 @@ class FlowVisor:
         Disables console logging.
         """
         Logger.LOG_TO_CONSOLE = False
-
-    '''
-    @staticmethod
-    def visualize_all():
-        """
-        Visualizes all the functions in this project.
-        """
-        FlowVisor.visualize_module_by_name("__main__")
-
-    @staticmethod
-    def visualize_module_by_name(module_name: str):
-        """
-        Visualizes all the functions in a module.
-        """
-        module = __import__(module_name)
-
-        FlowVisor.visualize_module(module)
-
-    @staticmethod
-    def visualize_module(module: object):
-        FlowVisor.visualize_module_helper(module, [])
-
-    @staticmethod
-    def visualize_module_helper(module: object, added_modules):
-        """
-        Visualizes all the functions in a module.
-        """
-        print("This function is still buggy and will not work as expected. Workin on it!")
-        for name, obj in getmembers(module, isfunction):
-            setattr(module, name, vis(obj))
-
-        # TODO
-        # # add for all submodules
-        #for name, sub_module in getmembers(module, ismodule):
-        #    if sub_module.__name__ in added_modules:
-        #        with open(f"log.txt", "a") as f:
-        #            f.write(f"NOT Visualizing module: {sub_module.__name__}\n")
-#
-        #        continue
-        #    added_modules.append(sub_module.__name__)
-        #    print(f"Visualizing module: {sub_module.__name__}")
-        #    # write to a file
-        #    with open(f"log.txt", "a") as f:
-        #        f.write(f"Visualizing module: {sub_module.__name__}\n")
-        #    FlowVisor.visualize_module_helper(sub_module, added_modules)
-    '''

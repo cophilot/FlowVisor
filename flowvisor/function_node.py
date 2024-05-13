@@ -44,10 +44,16 @@ class FunctionNode:
         draw = ImageDraw.Draw(image)
 
         t = self.get_time(config.exclusive_time_mode)
+        mean = time_value.mean_time
+        max = time_value.max_time
+        if config.use_avg_time:
+            t = self.get_avg_time(config.exclusive_time_mode)
+            mean = time_value.mean_avg_time
+            max = time_value.max_avg_time
 
-        color = utils.value_to_hex_color_using_mean(t, time_value.mean_time)
+        color = utils.value_to_hex_color_using_mean(t, mean)
 
-        if t >= time_value.max_time * (1 - config.outline_threshold):
+        if t >= max * (1 - config.outline_threshold):
             # draw outline
             draw.rectangle((0, 0, dim, dim), fill="#ff0000")
             ## draw inner
@@ -81,9 +87,14 @@ class FunctionNode:
 
         font_color = config.static_font_color
         if font_color == "":
+            t = self.get_time(config.exclusive_time_mode)
+            m = time_value.mean_time
+            if config.use_avg_time:
+                t = self.get_avg_time(config.exclusive_time_mode)
+                m = time_value.mean_avg_time
             font_color = utils.value_to_hex_color_using_mean(
-                self.get_time(config.exclusive_time_mode),
-                time_value.mean_time,
+                t,
+                m,
                 dark_color=[0xFF, 0xC0, 0x82],
                 light_color=[0x00, 0x00, 0x00],
             )
@@ -109,7 +120,7 @@ class FunctionNode:
         title += "\n"
 
         if config.show_node_avg_time:
-            title += f"avg {utils.get_time_as_string(t / self.called)}"
+            title += f"avg {utils.get_time_as_string(self.get_avg_time(config.exclusive_time_mode))}"
 
         title += "\n"
 
@@ -206,15 +217,6 @@ class FunctionNode:
                 if node.uuid == child_id:
                     self.add_child(node)
 
-    def get_time_without_children(self):
-        """
-        Gets the time without the children.
-        """
-        time = self.get_time()
-        for child in self.children:
-            time -= child.time
-        return time
-
     def get_time(self, exclusive=True):
         """
         Gets the time of the node.
@@ -225,6 +227,12 @@ class FunctionNode:
         if exclusive:
             return self.__time - self.child_time
         return self.__time
+
+    def get_avg_time(self, exclusive=True):
+        """
+        Gets the average time of the node.
+        """
+        return self.get_time(exclusive) / self.called
 
     @staticmethod
     def make_node_image_cache():
