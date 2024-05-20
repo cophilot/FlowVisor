@@ -63,6 +63,12 @@ class FlowVisorConfig:
         s += "Use Average Time: " + str(self.use_avg_time) + "\n"
         return s
 
+    def to_dict(self):
+        """
+        Convert the FlowVisorConfig object to a dictionary
+        """
+        return self.__dict__
+
     @staticmethod
     def from_dict(config_dict: dict):
         """

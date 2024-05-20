@@ -80,6 +80,8 @@ class FlowVisor:
     EXCLUDE_FUNCTIONS = []
     VERIFIER_MODE = False
 
+    SYS_INFO = None
+
     @staticmethod
     def add_function_node(func):
         """
@@ -212,7 +214,9 @@ class FlowVisor:
             if verify_text is not None:
                 Custom(verify_text, blank_image, width="2", height="0.1")
             if FlowVisor.CONFIG.show_system_info:
-                sys_info = utils.get_sys_info()
+                sys_info = FlowVisor.SYS_INFO
+                if sys_info is None:
+                    sys_info = utils.get_sys_info()
                 text = ""
                 for key, value in sys_info.items():
                     text += f"{key}: {value}\n"
@@ -290,16 +294,21 @@ class FlowVisor:
             return
 
         nodes_dict = FlowVisor.get_nodes_as_dict()
+        settings = FlowVisor.CONFIG.to_dict()
+        sys_info = utils.get_sys_info()
+
+        data = {"data": nodes_dict, "settings": settings, "sys-info": sys_info}
+
         if export_type == "json":
             if not file.endswith(".json"):
                 file += ".json"
             with open(file, "w", encoding="utf-8") as f:
-                json.dump(nodes_dict, f, indent=4)
+                json.dump(data, f, indent=4)
         if export_type == "pickle":
             if not file.endswith(".pickle"):
                 file += ".pickle"
             with open(file, "wb") as f:
-                pickle.dump(nodes_dict, f)
+                pickle.dump(data, f)
 
     @staticmethod
     def generate_graph(
@@ -314,12 +323,24 @@ class FlowVisor:
         mode = "pickle"
         if file.endswith(".json"):
             mode = "json"
+
         if mode == "json":
             with open(file, "r", encoding="utf-8") as f:
-                raw_nodes = json.load(f)
+                raw_data = json.load(f)
         else:
             with open(file, "rb") as f:
-                raw_nodes = pickle.load(f)
+                raw_data = pickle.load(f)
+
+        if "data" in raw_data:
+            raw_nodes = raw_data["data"]
+        else:
+            raw_nodes = raw_data
+
+        if "settings" in raw_data:
+            FlowVisor.CONFIG = FlowVisorConfig.from_dict(raw_data["settings"])
+
+        if "sys-info" in raw_data:
+            FlowVisor.SYS_INFO = raw_data["sys-info"]
 
         for n in raw_nodes:
             node = FunctionNode.from_dict(n)
@@ -334,7 +355,7 @@ class FlowVisor:
         """
         Draws the function node.
         """
-        time_value = TimeValue(FlowVisor.NODES, FlowVisor.CONFIG, FlowVisor.ROOTS)
+        time_value = TimeValue(FlowVisor.NODES, FlowVisor.CONFIG)
 
         node = func_node.get_as_diagram_node(time_value, FlowVisor.CONFIG)
         for child in func_node.children:

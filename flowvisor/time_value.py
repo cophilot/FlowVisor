@@ -15,11 +15,10 @@ class TimeValue:
         self,
         nodes: List[any],
         config: FlowVisorConfig,
-        roots: List[any],
     ):
         self.max_time = TimeValue.get_max_time(nodes, config)
         self.max_avg_time = TimeValue.get_avg_max_time(nodes, config)
-        self.total_time = TimeValue.get_total_time(nodes, config, roots)
+        self.total_time = TimeValue.get_total_time(nodes)
         self.mean_time = TimeValue.get_mean_time(nodes, config)
         self.mean_avg_time = TimeValue.get_mean_avg_time(nodes, config)
 
@@ -48,17 +47,13 @@ class TimeValue:
         return highest_time
 
     @staticmethod
-    def get_total_time(nodes: List[any], config: FlowVisorConfig, roots: List[any]):
+    def get_total_time(nodes: List[any]):
         """
         Returns the total time.
         """
         total_time = 0
-        n = nodes
-        if not config.exclusive_time_mode:
-            n = roots
-
-        for node in n:
-            total_time += node.get_time(config.exclusive_time_mode)
+        for node in nodes:
+            total_time += node.get_time(True)
 
         return total_time
 
