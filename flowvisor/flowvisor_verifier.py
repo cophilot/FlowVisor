@@ -78,6 +78,7 @@ class FlowVisorVerifier:
         Export the verifier entries to a file
         """
         new_entries = FlowVisorVerifier.summaries_entries(FlowVisorVerifier.ENTRIES)
+
         device_name = utils.get_device_name()
         meta = {"device_name": device_name, "count": 0}
         old_data = None
@@ -87,11 +88,10 @@ class FlowVisorVerifier:
         if existing_content is not None:
             meta = existing_content["meta"]
             old_data = existing_content["data"]
-            new_entries = FlowVisorVerifier.avarage_entries(
-                old_data, new_entries, meta["count"]
-            )
 
+        new_entries = FlowVisorVerifier.add_trace(old_data, new_entries)
         new_entries = FlowVisorVerifier.set_min_max(old_data, new_entries)
+        new_entries = FlowVisorVerifier.avarage_entries(new_entries)
 
         # parse meta data
         meta["count"] += 1
@@ -107,23 +107,13 @@ class FlowVisorVerifier:
             json.dump(content, f, indent=4)
 
     @staticmethod
-    def avarage_entries(old_data, new_data, count):
+    def avarage_entries(entries):
         """
         Avergae the entries
         """
-        for entry in new_data:
-            id_exists = False
-            for old_entry in old_data:
-                if old_entry["id"] == entry["id"]:
-                    old_entry["time"] = (old_entry["time"] * count + entry["time"]) / (
-                        count + 1
-                    )
-                    id_exists = True
-                    break
-            if not id_exists:
-                old_data.append(entry)
-
-        return old_data
+        for entry in entries:
+            entry["time"] = sum(entry["trace"]) / len(entry["trace"])
+        return entries
 
     @staticmethod
     def set_min_max(old_data, new_data):
@@ -148,6 +138,24 @@ class FlowVisorVerifier:
                 if old_entry["id"] == entry["id"]:
                     entry["min"] = min(old_entry["min"], entry["time"])
                     entry["max"] = max(old_entry["max"], entry["time"])
+                    break
+        return new_data
+
+    @staticmethod
+    def add_trace(old_data, new_data):
+        """
+        Add the time trace to the data
+        """
+        if old_data is None:
+            for entry in new_data:
+                entry["trace"] = [entry["time"]]
+            return new_data
+
+        for entry in new_data:
+            for old_entry in old_data:
+                if old_entry["id"] == entry["id"]:
+                    entry["trace"] = old_entry["trace"]
+                    entry["trace"].append(entry["time"])
                     break
         return new_data
 
