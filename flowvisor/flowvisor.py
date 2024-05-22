@@ -83,6 +83,20 @@ class FlowVisor:
     SYS_INFO = None
 
     @staticmethod
+    def reset():
+        """
+        Resets the flowvisor.
+        """
+        FlowVisor.VIS_FUNCTION = vis_impl
+        FlowVisor.NODES = []
+        FlowVisor.ROOTS = []
+        FlowVisor.STACK = []
+        FlowVisor.CONFIG = FlowVisorConfig()
+        FlowVisor.EXCLUDE_FUNCTIONS = []
+        FlowVisor.VERIFIER_MODE = False
+        FlowVisor.SYS_INFO = None
+
+    @staticmethod
     def add_function_node(func):
         """
         Adds a function node to the list of nodes if it does not exist.

@@ -5,6 +5,7 @@ from flowvisor.flowvisor import FlowVisor
 
 
 def generate_graph(file_path, verify=False, verify_file=None):
+    FlowVisor.reset()
     if verify_file is not None:
         FlowVisor.generate_graph(file_path, verify, verify_file)
     else:
