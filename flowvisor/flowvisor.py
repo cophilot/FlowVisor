@@ -64,6 +64,17 @@ def vis_impl(func):
     return wrapper
 
 
+def do_nothing(func):
+    """
+    Decorator that does nothing.
+    """
+
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 class FlowVisor:
     """
     The FlowVisor class is responsible for managing the flow of the functions
@@ -71,6 +82,7 @@ class FlowVisor:
     """
 
     VIS_FUNCTION = vis_impl
+    VIS_FUNCTION_CACHE = vis_impl
 
     NODES: List[FunctionNode] = []
     ROOTS: List[FunctionNode] = []
@@ -79,6 +91,7 @@ class FlowVisor:
 
     EXCLUDE_FUNCTIONS = []
     VERIFIER_MODE = False
+    DISABLED = False
 
     SYS_INFO = None
 
@@ -88,13 +101,31 @@ class FlowVisor:
         Resets the flowvisor.
         """
         FlowVisor.VIS_FUNCTION = vis_impl
+        FlowVisor.VIS_FUNCTION_CACHE = vis_impl
         FlowVisor.NODES = []
         FlowVisor.ROOTS = []
         FlowVisor.STACK = []
         FlowVisor.CONFIG = FlowVisorConfig()
         FlowVisor.EXCLUDE_FUNCTIONS = []
         FlowVisor.VERIFIER_MODE = False
+        FlowVisor.DISABLED = False
         FlowVisor.SYS_INFO = None
+
+    @staticmethod
+    def disable():
+        """
+        Disables the flowvisor.
+        """
+        FlowVisor.VIS_FUNCTION = do_nothing
+        FlowVisor.DISABLED = True
+
+    @staticmethod
+    def enable():
+        """
+        Enables the flowvisor.
+        """
+        FlowVisor.VIS_FUNCTION = FlowVisor.VIS_FUNCTION_CACHE
+        FlowVisor.DISABLED = False
 
     @staticmethod
     def add_function_node(func):
@@ -168,6 +199,9 @@ class FlowVisor:
         """
         Generates the graph.
         """
+        if FlowVisor.DISABLED:
+            Logger.log("Can not generate graph when disabled!")
+            return
         if FlowVisor.VERIFIER_MODE:
             Logger.log("Can not generate graph in verifier mode!")
             return
@@ -303,6 +337,9 @@ class FlowVisor:
         """
         Saves the flow to a file.
         """
+        if FlowVisor.DISABLED:
+            Logger.log("Can not export when disabled!")
+            return
         if FlowVisor.VERIFIER_MODE:
             Logger.log("Can not export in verifier mode!")
             return
@@ -462,12 +499,18 @@ class FlowVisor:
         )
 
     @staticmethod
-    def enable_verifier_mode():
+    def enable_verifier_mode(force=False):
         """
         Enables the verifier mode.
+
+        :param force: If True, the verifier mode will be enabled even if the FlowVisor is disabled.
         """
+        if FlowVisor.DISABLED and not force:
+            Logger.log("Can not enable verifier mode when disabled!")
+            return
         FlowVisor.VERIFIER_MODE = True
         FlowVisor.VIS_FUNCTION = vis_verifier
+        FlowVisor.VIS_FUNCTION_CACHE = vis_verifier
         Logger.log("*** Running FlowVisor in verify mode ***")
 
     @staticmethod
@@ -475,6 +518,9 @@ class FlowVisor:
         """
         Exports the verifier.
         """
+        if FlowVisor.DISABLED:
+            Logger.log("Can not export verify when disabled!")
+            return
         if not FlowVisor.VERIFIER_MODE:
             Logger.log("Can not export verify in non-verifier mode!")
             return
@@ -485,6 +531,9 @@ class FlowVisor:
         """
         Checks the result against the verifier.
         """
+        if FlowVisor.DISABLED:
+            Logger.log("Can not verify when disabled!")
+            return False
         if FlowVisor.VERIFIER_MODE:
             Logger.log("Can not verify in verifier mode!")
             return False
