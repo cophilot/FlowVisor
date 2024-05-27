@@ -20,20 +20,15 @@ def vis_verifier(func):
     return wrapper
 
 
-def vis_verifier2(func):
+def c_vis_verifier(func):
     def wrapper(*args, **kwargs):
-
-        pr = cProfile.Profile()  # create new Profiler object
-        pr.enable()  # start recording of time for Profiler
+        profiler = cProfile.Profile()
+        profiler.enable()
         res = func(*args, **kwargs)
-        pr.disable()  # stop recording of time for Profiler
-        # get the time that the function took
-
-        p = pstats.Stats(pr)
-        total_time = p.total_tt
-        FlowVisorVerifier.add_entry(func, total_time)
-        time_str = utils.get_time_as_string(total_time)
-        print(f"Function {func.__name__} took {time_str} seconds")
+        profiler.disable()
+        stats = pstats.Stats(profiler)
+        time_value = stats.total_tt
+        FlowVisorVerifier.add_entry(func, time_value)
         return res
 
     return wrapper
