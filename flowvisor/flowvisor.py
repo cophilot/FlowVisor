@@ -98,7 +98,7 @@ class FlowVisor:
     @staticmethod
     def reset():
         """
-        Resets the flowvisor.
+        Resets FlowVisor.
         """
         FlowVisor.VIS_FUNCTION = vis_impl
         FlowVisor.VIS_FUNCTION_CACHE = vis_impl
@@ -363,7 +363,11 @@ class FlowVisor:
 
     @staticmethod
     def generate_graph(
-        file: str = "", verify=False, verify_file_name="flowvisor_verifier.json"
+        file: str = "",
+        verify=False,
+        verify_file_name="flowvisor_verifier.json",
+        use_verifier_time_as_inclusive_time=False,
+        config: dict = None,
     ):
         """
         Generates the graph from a file.
@@ -387,8 +391,27 @@ class FlowVisor:
         else:
             raw_nodes = raw_data
 
+        if use_verifier_time_as_inclusive_time:
+            if not os.path.exists(verify_file_name):
+                Logger.log(f"File {verify_file_name} does not exist!")
+            else:
+                with open(verify_file_name, "r", encoding="utf-8") as f:
+                    verifier_data = json.load(f)["data"]
+
+                if "data" in verifier_data:
+                    verifier_data = verifier_data["data"]
+
+                for node in raw_nodes:
+                    for verifier_node in verifier_data:
+                        if node["id"] == verifier_node["id"]:
+                            node["inclusive_time"] = verifier_node["time"]
+
         if "settings" in raw_data:
             FlowVisor.CONFIG = FlowVisorConfig.from_dict(raw_data["settings"])
+
+        if config is not None:
+            for key, value in config.items():
+                setattr(FlowVisor.CONFIG, key, value)
 
         if "sys-info" in raw_data:
             FlowVisor.SYS_INFO = raw_data["sys-info"]
@@ -409,8 +432,12 @@ class FlowVisor:
         time_value = TimeValue(FlowVisor.NODES, FlowVisor.CONFIG)
 
         node = func_node.get_as_diagram_node(time_value, FlowVisor.CONFIG)
+        if node is None:
+            return
         for child in func_node.children:
-            _ = node >> child.get_as_diagram_node(time_value, FlowVisor.CONFIG)
+            child_node = child.get_as_diagram_node(time_value, FlowVisor.CONFIG)
+            if child_node is not None:
+                _ = node >> child_node
 
     @staticmethod
     def is_function_excluded(func):

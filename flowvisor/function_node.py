@@ -79,6 +79,9 @@ class FunctionNode:
         """
         Generates the diagram node.
         """
+        if self.get_percentage(time_value, config) < config.percantage_threshold:
+            return
+
         node_image = self.export_node_image(time_value, config)
 
         size = config.node_scale
@@ -125,7 +128,7 @@ class FunctionNode:
         title += "\n"
 
         if config.show_function_time_percantage:
-            percentage = (t / time_value.total_time) * 100
+            percentage = self.get_percentage(time_value, config) * 100
             title += f"{round(percentage, 2)}%"
 
         title += "\n"
@@ -133,6 +136,10 @@ class FunctionNode:
         for _ in range(int(config.node_scale) - 1):
             title += "\n\n"
         return title
+
+    def get_percentage(self, time_value: TimeValue, config: FlowVisorConfig):
+        t = self.get_time(config.exclusive_time_mode)
+        return t / time_value.total_time
 
     def got_called(self, duration: float):
         """
