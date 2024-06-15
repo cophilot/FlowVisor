@@ -13,7 +13,7 @@ from diagrams.custom import Custom
 from flowvisor import utils
 from flowvisor.logger import Logger
 from flowvisor.flowvisor_config import FlowVisorConfig
-from flowvisor.flowvisor_verifier import FlowVisorVerifier, vis_verifier
+from flowvisor.flowvisor_verifier import FlowVisorVerifier, c_vis_verifier, vis_verifier
 from flowvisor.function_node import FunctionNode
 from flowvisor.sankey import make_sankey_diagram
 from flowvisor.time_tracker import TimeTracker
@@ -505,6 +505,13 @@ class FlowVisor:
         FlowVisor.CONFIG.dev_mode = True
 
     @staticmethod
+    def conf(config: dict):
+        """
+        Sets the configuration.
+        """
+        FlowVisor.set_config(config)
+
+    @staticmethod
     def set_config(config: dict):
         """
         Sets the configuration.
@@ -513,20 +520,22 @@ class FlowVisor:
         FlowVisor.CONFIG = FlowVisorConfig.from_dict(config)
 
     @staticmethod
-    def auto_verifier_mode(verifier_limit=10, file_name="flowvisor_verifier.json"):
+    def auto_verifier_mode(
+        verifier_limit=10, file_name="flowvisor_verifier.json", use_c_profile=False
+    ):
         """
         Automatically enables the verifier mode.
         """
         count = FlowVisorVerifier.get_count_of_file(file_name)
         if count < verifier_limit:
-            FlowVisor.enable_verifier_mode()
+            FlowVisor.enable_verifier_mode(use_c_profile=use_c_profile)
             return
         Logger.log(
             f"Verifier mode not enabled. Count of calls is {count} and the limit is {verifier_limit}"
         )
 
     @staticmethod
-    def enable_verifier_mode(force=False):
+    def enable_verifier_mode(force=False, use_c_profile=False):
         """
         Enables the verifier mode.
 
@@ -538,7 +547,12 @@ class FlowVisor:
         FlowVisor.VERIFIER_MODE = True
         FlowVisor.VIS_FUNCTION = vis_verifier
         FlowVisor.VIS_FUNCTION_CACHE = vis_verifier
-        Logger.log("*** Running FlowVisor in verify mode ***")
+        if use_c_profile:
+            FlowVisor.VIS_FUNCTION = c_vis_verifier
+            FlowVisor.VIS_FUNCTION_CACHE = c_vis_verifier
+            Logger.log("*** Running FlowVisor in verify mode with cProfile ***")
+        else:
+            Logger.log("*** Running FlowVisor in verify mode ***")
 
     @staticmethod
     def verify_export(file_name="flowvisor_verifier.json"):
