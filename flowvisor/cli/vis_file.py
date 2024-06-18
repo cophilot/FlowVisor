@@ -9,6 +9,8 @@ def generate_graph(file_path, verify=False, verify_file=None, config={}):
     FlowVisor.generate_graph(file_path, verify, verify_file, config=config)
 
     out_file = FlowVisor.CONFIG.output_file
+    if not out_file.endswith(".png"):
+        out_file += ".png"
     abs_path = os.path.abspath(out_file)
     print(f"Flow graph generated at {abs_path}")
 
@@ -21,6 +23,19 @@ def parse_config_string(config):
     config_arr = config.split(",")
     for item in config_arr:
         key, value = item.split("=")
+        if value == "True":
+            value = True
+        elif value == "False":
+            value = False
+        
+        try:
+            value = int(value)
+        except ValueError:
+            try:
+                value = float(value)
+            except ValueError:
+                pass
+        
         config_obj[key] = value
     return config_obj
 
@@ -82,7 +97,7 @@ def main():
         sys.exit(1)
 
     config = parse_config_string(config)
-    generate_graph(file_path, verify, verify_file)
+    generate_graph(file_path, verify, verify_file, config)
 
 
 if __name__ == "__main__":

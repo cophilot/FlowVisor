@@ -505,13 +505,6 @@ class FlowVisor:
         FlowVisor.CONFIG.dev_mode = True
 
     @staticmethod
-    def conf(config: dict):
-        """
-        Sets the configuration.
-        """
-        FlowVisor.set_config(config)
-
-    @staticmethod
     def set_config(config: dict):
         """
         Sets the configuration.
@@ -595,3 +588,56 @@ class FlowVisor:
         Disables console logging.
         """
         Logger.LOG_TO_CONSOLE = False
+
+    @staticmethod
+    def conf(
+        show_graph: bool = True,
+        logo: str = "",
+        graph_title: str = "",
+        node_scale: float = 2.0,
+        show_node_file: bool = True,
+        show_node_call_count: bool = True,
+        show_function_time_percantage: bool = True,
+        show_node_avg_time: bool = True,
+        static_font_color: str = "",
+        show_timestamp: bool = False,
+        show_system_info: bool = False,
+        show_flowvisor_settings: bool = False,
+        group_nodes: bool = False,
+        outline_threshold: float = 0.1,
+        percantage_threshold: float = -1,
+        output_file: str = "function_flow",
+        reduce_overhead: bool = True,
+        exclusive_time_mode: bool = True,
+        advanced_overhead_reduction=None,
+        use_avg_time: bool = False,
+        verify_threshold: float = 0.2,
+        dev_mode: bool = False,
+    ):
+        """
+        Sets the configuration.
+        """
+        c = FlowVisor.CONFIG
+        c.show_graph = show_graph
+        c.logo = logo
+        c.graph_title = graph_title
+        c.node_scale = node_scale
+        c.show_node_file = show_node_file
+        c.show_node_call_count = show_node_call_count
+        c.show_function_time_percantage = show_function_time_percantage
+        c.show_node_avg_time = show_node_avg_time
+        c.static_font_color = static_font_color
+        c.show_timestamp = show_timestamp
+        c.show_system_info = show_system_info
+        c.show_flowvisor_settings = show_flowvisor_settings
+        c.group_nodes = group_nodes
+        c.outline_threshold = outline_threshold
+        c.percantage_threshold = percantage_threshold
+        c.output_file = output_file
+        c.reduce_overhead = reduce_overhead
+        c.exclusive_time_mode = exclusive_time_mode
+        c.advanced_overhead_reduction = advanced_overhead_reduction
+        c.use_avg_time = use_avg_time
+        c.verify_threshold = verify_threshold
+        c.dev_mode = dev_mode
+        FlowVisor.CONFIG = c
