@@ -11,6 +11,7 @@ import pickle
 from diagrams import Diagram, Cluster
 from diagrams.custom import Custom
 from flowvisor import utils
+from flowvisor.delta_function_node import DeltaFunctionNode
 from flowvisor.logger import Logger
 from flowvisor.flowvisor_config import FlowVisorConfig
 from flowvisor.flowvisor_verifier import FlowVisorVerifier, c_vis_verifier, vis_verifier
@@ -18,7 +19,7 @@ from flowvisor.function_node import FunctionNode
 from flowvisor.sankey import make_sankey_diagram
 from flowvisor.time_tracker import TimeTracker
 from flowvisor.time_value import TimeValue
-from flowvisor.utils import function_to_id
+from flowvisor.utils import function_to_id, get_data_from_file
 
 
 def vis(func):
@@ -195,7 +196,10 @@ class FlowVisor:
         return [node for node in FlowVisor.NODES if node.called > 0]
 
     @staticmethod
-    def graph(verify=False, verify_file_name="flowvisor_verifier.json"):
+    def graph(
+        verify=False,
+        verify_file_name="flowvisor_verifier.json",
+    ):
         """
         Generates the graph.
         """
@@ -241,7 +245,6 @@ class FlowVisor:
                 else:
                     for n in called_nodes:
                         FlowVisor.draw_function_node(n)
-
         finally:
             # Make sure to clear the cache always
             FunctionNode.clear_node_image_cache()
@@ -362,6 +365,43 @@ class FlowVisor:
                 pickle.dump(data, f)
 
     @staticmethod
+    def generate_delta_graph(
+        a: str,
+        b: str,
+        config: dict = None,
+    ):
+        """
+        Generates a delta graph that shows the difference between two flow graphs [b - a].
+        """
+        nodes_a, new_config, sys_info = FlowVisor._parse_flow_file(a, config=config)
+        if nodes_a is None:
+            return
+
+        nodes_b, _, _ = FlowVisor._parse_flow_file(b)
+        if nodes_b is None:
+            return
+
+        if new_config is not None:
+            FlowVisor.CONFIG = new_config
+
+        if sys_info is not None:
+            FlowVisor.SYS_INFO = sys_info
+
+        delta_nodes = []
+        for node_a in nodes_a:
+            for node_b in nodes_b:
+                if node_a.id == node_b.id:
+                    new_node = DeltaFunctionNode(node_a, node_b)
+                    delta_nodes.append(new_node)
+                    break
+
+        for n in delta_nodes:
+            n.resolve_children_ids(delta_nodes)
+
+        FlowVisor.NODES = delta_nodes
+        FlowVisor.graph()
+
+    @staticmethod
     def generate_graph(
         file: str = "",
         verify=False,
@@ -372,57 +412,74 @@ class FlowVisor:
         """
         Generates the graph from a file.
         """
+
+        nodes, new_config, sys_info = FlowVisor._parse_flow_file(
+            file, verify_file_name, use_verifier_time_as_inclusive_time, config
+        )
+        if nodes is None:
+            return
+
+        if new_config is not None:
+            FlowVisor.CONFIG = new_config
+
+        if sys_info is not None:
+            FlowVisor.SYS_INFO = sys_info
+
+        FlowVisor.NODES = nodes
+
+        FlowVisor.graph(verify, verify_file_name)
+
+    @staticmethod
+    def _parse_flow_file(
+        file: str = "",
+        verify_file_name="flowvisor_verifier.json",
+        use_verifier_time_as_inclusive_time=False,
+        config: dict = None,
+    ) -> tuple[None, None, None] | tuple[List[FunctionNode], FlowVisorConfig, dict]:
+        """
+        Generates the graph from a file.
+
+        Returns: nodes, config, sys_info
+        """
         if not os.path.exists(file):
             Logger.log(f"File {file} does not exist!")
-            return
-        mode = "pickle"
-        if file.endswith(".json"):
-            mode = "json"
+            return None, None, None
 
-        if mode == "json":
-            with open(file, "r", encoding="utf-8") as f:
-                raw_data = json.load(f)
-        else:
-            with open(file, "rb") as f:
-                raw_data = pickle.load(f)
-
+        raw_data = get_data_from_file(file, parse_data=False)
+        raw_nodes = raw_data
         if "data" in raw_data:
             raw_nodes = raw_data["data"]
-        else:
-            raw_nodes = raw_data
 
         if use_verifier_time_as_inclusive_time:
             if not os.path.exists(verify_file_name):
                 Logger.log(f"File {verify_file_name} does not exist!")
             else:
-                with open(verify_file_name, "r", encoding="utf-8") as f:
-                    verifier_data = json.load(f)["data"]
-
-                if "data" in verifier_data:
-                    verifier_data = verifier_data["data"]
+                verifier_data = get_data_from_file(verify_file_name)
 
                 for node in raw_nodes:
                     for verifier_node in verifier_data:
                         if node["id"] == verifier_node["id"]:
                             node["inclusive_time"] = verifier_node["time"]
-
+        new_config = None
         if "settings" in raw_data:
-            FlowVisor.CONFIG = FlowVisorConfig.from_dict(raw_data["settings"])
+            new_config = FlowVisorConfig.from_dict(raw_data["settings"])
 
         if config is not None:
             for key, value in config.items():
-                setattr(FlowVisor.CONFIG, key, value)
+                setattr(new_config, key, value)
 
+        sys_info = None
         if "sys-info" in raw_data:
-            FlowVisor.SYS_INFO = raw_data["sys-info"]
+            sys_info = raw_data["sys-info"]
 
+        nodes = []
         for n in raw_nodes:
             node = FunctionNode.from_dict(n)
-            FlowVisor.NODES.append(node)
-        for node in FlowVisor.NODES:
-            node.resolve_children_ids(FlowVisor.NODES)
+            nodes.append(node)
+        for node in nodes:
+            node.resolve_children_ids(nodes)
 
-        FlowVisor.graph(verify, verify_file_name)
+        return nodes, new_config, sys_info
 
     @staticmethod
     def draw_function_node(func_node: FunctionNode):

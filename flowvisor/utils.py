@@ -2,7 +2,9 @@
 Utility functions for the flowvisor package
 """
 
+import json
 import os
+import pickle
 
 
 def function_to_id(func):
@@ -22,23 +24,29 @@ def get_time_as_string(t: float):
     Args:
         t: time in seconds
     """
+
+    sign = ""
+    if t < 0:
+        sign = "-"
+        t = -t
+
     seconds = int(t)
     if seconds > 0:
-        return f"{seconds}s"
+        return f"{sign}{seconds}s"
 
     milliseconds = int(t * 1000)
     if milliseconds > 0:
-        return f"{milliseconds}ms"
+        return f"{sign}{milliseconds}ms"
 
     microseconds = int(t * 1000000)
     if microseconds > 0:
-        return f"{microseconds}μs"
+        return f"{sign}{microseconds}μs"
 
     nanoseconds = int(t * 1000000000)
     if nanoseconds > 0:
-        return f"{nanoseconds}ns"
+        return f"{sign}{nanoseconds}ns"
 
-    return "<1ns"
+    return f"<1ns"
 
 
 def value_to_hex_color(
@@ -71,6 +79,15 @@ def value_to_hex_color_using_mean(
     """
     Returns the color based on the value and the mean value
     """
+    if value < 0:
+        value = -value
+
+    if mean_value < 0:
+        mean_value = -mean_value
+
+    if mean_value == 0:
+        return "#fff"
+
     ratio = value / mean_value
     ratio = ratio / 2
 
@@ -140,3 +157,20 @@ def get_node_by_id(n_id, nodes):
         if node.id == n_id:
             return node
     return None
+
+
+def get_data_from_file(file, parse_data=True):
+    """
+    Get data from a file.
+    Parses the file as json or pickle based on the file extension
+    Returns the data object if it exists
+    """
+    if file.endswith(".json"):
+        with open(file, "r", encoding="utf-8") as f:
+            raw_data = json.load(f)
+    else:
+        with open(file, "rb") as f:
+            raw_data = pickle.load(f)
+    if "data" in raw_data and parse_data:
+        return raw_data["data"]
+    return raw_data

@@ -35,38 +35,6 @@ class FunctionNode:
         self.called: int = 0
         self.child_time: float = 0
 
-    def export_node_image(self, time_value: TimeValue, config: FlowVisorConfig):
-        """
-        Generates the node image background.
-        """
-        dim = FunctionNode.NODE_IMAGE_SCALE
-        image = Image.new("RGB", (dim, dim), "white")
-        draw = ImageDraw.Draw(image)
-
-        t = self.get_time(config.exclusive_time_mode)
-        mean = time_value.mean_time
-        max = time_value.max_time
-        if config.use_avg_time:
-            t = self.get_avg_time(config.exclusive_time_mode)
-            mean = time_value.mean_avg_time
-            max = time_value.max_avg_time
-
-        color = utils.value_to_hex_color_using_mean(t, mean)
-
-        if t >= max * (1 - config.outline_threshold):
-            # draw outline
-            draw.rectangle((0, 0, dim, dim), fill="#ff0000")
-            ## draw inner
-            draw.rectangle((10, 10, dim - 10, dim - 10), fill=color)
-        else:
-            draw.rectangle((0, 0, dim, dim), fill=color)
-
-        os.makedirs(FunctionNode.NODE_IMAGE_CACHE, exist_ok=True)
-        file_name = f"{FunctionNode.NODE_IMAGE_CACHE}/{self.uuid}.png"
-        image.save(file_name)
-
-        return file_name
-
     def get_as_diagram_node(self, time_value: TimeValue, config: FlowVisorConfig):
         """
         Gets the node as a diagram node.
@@ -106,6 +74,38 @@ class FunctionNode:
             title, node_image, width=str(size), height=str(size), fontcolor=font_color
         )
 
+    def export_node_image(self, time_value: TimeValue, config: FlowVisorConfig):
+        """
+        Generates the node image background.
+        """
+        dim = FunctionNode.NODE_IMAGE_SCALE
+        image = Image.new("RGB", (dim, dim), "white")
+        draw = ImageDraw.Draw(image)
+
+        t = self.get_time(config.exclusive_time_mode)
+        mean = time_value.mean_time
+        max = time_value.max_time
+        if config.use_avg_time:
+            t = self.get_avg_time(config.exclusive_time_mode)
+            mean = time_value.mean_avg_time
+            max = time_value.max_avg_time
+
+        color = utils.value_to_hex_color_using_mean(t, mean)
+
+        if t >= max * (1 - config.outline_threshold):
+            # draw outline
+            draw.rectangle((0, 0, dim, dim), fill="#ff0000")
+            ## draw inner
+            draw.rectangle((10, 10, dim - 10, dim - 10), fill=color)
+        else:
+            draw.rectangle((0, 0, dim, dim), fill=color)
+
+        os.makedirs(FunctionNode.NODE_IMAGE_CACHE, exist_ok=True)
+        file_name = f"{FunctionNode.NODE_IMAGE_CACHE}/{self.uuid}.png"
+        image.save(file_name)
+
+        return file_name
+
     def get_node_title(self, time_value: TimeValue, config: FlowVisorConfig):
         """
         Returns the title of the node, that is displayed in the diagram.
@@ -138,6 +138,11 @@ class FunctionNode:
         return title
 
     def get_percentage(self, time_value: TimeValue, config: FlowVisorConfig):
+        """
+        Returns the percentage of the time spent in the function.
+        """
+        if time_value.total_time == 0:
+            return 0
         t = self.get_time(config.exclusive_time_mode)
         return t / time_value.total_time
 
@@ -178,7 +183,7 @@ class FunctionNode:
         """
         Returns the file name and function name.
         """
-        return f"{self.file_name}::{self.name}"
+        return f"{self.file_name}::{self.name} {utils.get_time_as_string(self.__time)} ({self.called})"
 
     def __str__(self):
         return self.file_function_name()
