@@ -59,7 +59,7 @@ setup(
         "console_scripts": [
             "add-vis=flowvisor.cli.add_vis:main",
             "remove-vis=flowvisor.cli.remove_vis:main",
-            "vis-file=flowvisor.cli.vis_file:main"
+            "vis-file=flowvisor.cli.vis_file:main",
             "vis-delta=flowvisor.cli.vis_delta:main",
         ]
     },
