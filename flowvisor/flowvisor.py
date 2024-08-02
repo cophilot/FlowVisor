@@ -523,6 +523,13 @@ class FlowVisor:
         FlowVisor.EXCLUDE_FUNCTIONS = exclude_functions
 
     @staticmethod
+    def filter_nodes(sub_name: str):
+        """
+        Filters the nodes by a substring.
+        """
+        FlowVisor.NODES = [node for node in FlowVisor.NODES if sub_name in node.id]
+
+    @staticmethod
     def is_stack_empty():
         """
         Checks if the stack is empty.

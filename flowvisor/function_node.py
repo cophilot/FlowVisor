@@ -84,15 +84,15 @@ class FunctionNode:
 
         t = self.get_time(config.exclusive_time_mode)
         mean = time_value.mean_time
-        max = time_value.max_time
+        max_time = time_value.max_time
         if config.use_avg_time:
             t = self.get_avg_time(config.exclusive_time_mode)
             mean = time_value.mean_avg_time
-            max = time_value.max_avg_time
+            max_time = time_value.max_avg_time
 
         color = utils.value_to_hex_color_using_mean(t, mean)
 
-        if t >= max * (1 - config.outline_threshold):
+        if t >= max_time * (1 - config.outline_threshold):
             # draw outline
             draw.rectangle((0, 0, dim, dim), fill="#ff0000")
             ## draw inner
